@@ -90,6 +90,19 @@
     slugInput.addEventListener("input", () => $$(".slug-echo").forEach(el => (el.textContent = slugInput.value || "your-brand")));
   }
 
+  // Prize validity mirrors the campaign length (end date − start date, or − now when no start date)
+  const validity = $("[data-validity-days]");
+  if (validity) {
+    const form = validity.form, fallback = "30";
+    const recalc = () => {
+      const start = form.elements.starts_at.value ? new Date(form.elements.starts_at.value) : new Date();
+      const end = form.elements.ends_at.value ? new Date(form.elements.ends_at.value) : null;
+      validity.value = end ? Math.min(Math.max(Math.ceil((end - start) / 86400000), 1), 3650) : fallback;
+    };
+    ["starts_at", "ends_at"].forEach(n => form.elements[n].addEventListener("input", recalc));
+    recalc();
+  }
+
   // Repeating prize rows
   const addPrize = $("#add-prize-row");
   if (addPrize) {

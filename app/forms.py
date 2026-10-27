@@ -2,10 +2,11 @@
 
 Each apply_* function mutates the model and returns a list of error strings.
 """
+import math
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
-from .models import Branch, Brand, Prize, User
+from .models import Branch, Brand, Prize, User, utcnow
 from .utils.codes import is_valid_email, slugify
 from .utils.theming import clean_hex
 from .utils.timefmt import local_to_utc
@@ -72,6 +73,14 @@ def apply_brand_form(brand, form, files):
     return errors
 
 
+def campaign_validity_days(starts_at, ends_at, default=30):
+    """Prize validity = whole days from campaign start (or now) to end; `default` when open-ended."""
+    if not ends_at:
+        return default
+    seconds = (ends_at - (starts_at or utcnow())).total_seconds()
+    return min(max(math.ceil(seconds / 86400), 1), 3650)
+
+
 def apply_campaign_form(campaign, form):
     errors = []
     campaign.name = _s(form, "campaign_name", 150) or "Scratch & Win"
@@ -85,11 +94,11 @@ def apply_campaign_form(campaign, form):
     campaign.currency = (_s(form, "currency", 8) or "SAR").upper()
     campaign.voucher_percent = _int(form, "voucher_percent", 10, 1, 100)
     campaign.fallback_enabled = bool(form.get("fallback_enabled"))
-    campaign.claim_expiry_days = _int(form, "claim_expiry_days", 30, 1, 365)
     campaign.starts_at = _dt(form, "starts_at")
     campaign.ends_at = _dt(form, "ends_at")
     if campaign.starts_at and campaign.ends_at and campaign.ends_at <= campaign.starts_at:
         errors.append("Campaign end date must be after the start date.")
+    campaign.claim_expiry_days = campaign_validity_days(campaign.starts_at, campaign.ends_at)
     campaign.terms_en = _s(form, "terms_en") or None
     campaign.terms_ar = _s(form, "terms_ar") or None
     if "is_active" in form or form.get("_has_active"):

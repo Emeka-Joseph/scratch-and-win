@@ -247,3 +247,17 @@ def test_draw_is_proportional_to_remaining_stock():
     counts = Counter(draw_prize([big, small, gone]).name for _ in range(20000))
     assert counts["Gone"] == 0
     assert 0.87 < counts["Big"] / 20000 < 0.93
+
+
+def test_prize_validity_follows_campaign_dates(app):
+    from datetime import datetime, timedelta
+    from app.forms import campaign_validity_days
+    from app.models import Campaign
+    sa = app.test_client()
+    login(sa, "super@test.com", "SuperPass1")
+    start, fmt = datetime.now().replace(second=0, microsecond=0) - timedelta(days=1), "%Y-%m-%dT%H:%M"
+    create_brand(app, sa, claim_expiry_days="999",   # submitted value is ignored
+                 starts_at=start.strftime(fmt), ends_at=(start + timedelta(days=45)).strftime(fmt))
+    assert Campaign.query.one().claim_expiry_days == 45
+    assert campaign_validity_days(start, start + timedelta(days=10, hours=1)) == 11   # part days round up
+    assert campaign_validity_days(start, None) == 30                                  # open-ended

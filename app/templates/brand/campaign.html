@@ -28,7 +28,8 @@
         <div class="field"><label>Campaign name (Arabic)</label><input class="input" dir="rtl" name="campaign_name_ar" value="{{ c.name_ar or '' }}"></div>
         <div class="field"><label>Starts</label><input class="input" type="datetime-local" name="starts_at" value="{{ dtval(c.starts_at) }}"><div class="hint">Blank = starts immediately</div></div>
         <div class="field"><label>Ends</label><input class="input" type="datetime-local" name="ends_at" value="{{ dtval(c.ends_at) }}"><div class="hint">Blank = runs until paused</div></div>
-        <div class="field"><label>Prize valid for (days after winning)</label><input class="input" type="number" min="1" max="365" name="claim_expiry_days" value="{{ c.claim_expiry_days or 30 }}"></div>
+        <div class="field"><label>Prize valid for (days)</label><input class="input" type="number" name="claim_expiry_days" value="{{ c.claim_expiry_days or 30 }}" readonly data-validity-days tabindex="-1">
+              <div class="hint">Calculated from the start and end dates (30 when no end date is set)</div></div>
         <div class="field" style="align-self:center"><label class="check"><input type="checkbox" name="is_active" value="1" {{ 'checked' if c.is_active or not c.id }}> Campaign is active</label></div>
       </div>
 

@@ -143,6 +143,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
 .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .12); }
 textarea.input { min-height: 96px; resize: vertical; }
 .input-sm { padding: 7px 9px; font-size: 13px; border-radius: 8px; }
+.input[readonly] { background: var(--surface-2); color: var(--muted); cursor: default; }
 .input-group { display: flex; }
 .input-group .input { border-radius: 10px 0 0 10px; }
 .input-group .btn { border-radius: 0 10px 10px 0; }

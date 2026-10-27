@@ -81,7 +81,8 @@
               <div class="hint">Given when other prizes run out.</div></div>
             <div class="field"><label>Starts</label><input class="input" type="datetime-local" name="starts_at" value="{{ v('starts_at') }}"></div>
             <div class="field"><label>Ends</label><input class="input" type="datetime-local" name="ends_at" value="{{ v('ends_at') }}"></div>
-            <div class="field"><label>Prize valid for (days)</label><input class="input" type="number" min="1" max="365" name="claim_expiry_days" value="{{ v('claim_expiry_days', '30') }}"></div>
+            <div class="field"><label>Prize valid for (days)</label><input class="input" type="number" name="claim_expiry_days" value="{{ v('claim_expiry_days', '30') }}" readonly data-validity-days tabindex="-1">
+              <div class="hint">Calculated from the start and end dates (30 when no end date is set)</div></div>
             <div class="field" style="align-self:end"><label class="check"><input type="checkbox" name="fallback_enabled" value="1" checked> Enable fallback voucher</label></div>
             <div class="field"><label>Terms &amp; conditions (English)</label><textarea class="input" name="terms_en">{{ v('terms_en', 'One gift per customer. Your email address and mobile number can only be used once. Prizes are non-transferable, cannot be exchanged for cash and must be redeemed before the expiry date.') }}</textarea></div>
             <div class="field"><label>Terms &amp; conditions (Arabic)</label><textarea class="input" dir="rtl" name="terms_ar">{{ v('terms_ar', 'هدية واحدة لكل عميل. لا يمكن استخدام بريدك الإلكتروني ورقم جوالك إلا مرة واحدة. الجوائز غير قابلة للتحويل أو الاستبدال نقداً ويجب استلامها قبل تاريخ الانتهاء.') }}</textarea></div>
