@@ -105,7 +105,7 @@ python deploy/bootstrap.py
 | "We're sorry, but something went wrong" / 500 on every page | Open the Passenger log: Setup Python App → app → *Passenger log file*, or `stderr.log` in the app root. A `Production configuration error` means `.env` is missing a value; the message says which one. |
 | `Access denied for user` | Use the full prefixed names (`cpuser_...`), check the user has ALL PRIVILEGES and URL-encode the password. |
 | `ModuleNotFoundError` | Run Pip Install again for the same Python version the app uses. |
-| Emails not arriving | Settings → test email. Many hosts block outbound port 587/465 to external SMTP servers like Gmail; use the cPanel mailbox's own server. Add SPF/DKIM in cPanel → **Email Deliverability** so mail isn't marked as spam. |
+| Emails not arriving | Superadmin → Settings → **Send test email** shows the exact SMTP error. Every failed customer email is logged in **Audit log** as *email failed*, with the error. Keep `MAIL_ASYNC=0` on cPanel/LiteSpeed. If the server accepts the mail but it never arrives, check spam and cPanel → **Email Deliverability** (SPF/DKIM). |
 | Logos don't save | `app/static/uploads` must be writable (permissions 755, owned by your cPanel user). |
 | Login loops back to the sign-in page | The site is being opened over `http://`. Add the HTTPS redirect (step 8), or set `TRUST_PROXY=1` if Cloudflare is in front. |
 | Code changes don't show | Restart the app. Passenger caches the running code. |

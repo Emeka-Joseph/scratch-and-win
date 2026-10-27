@@ -261,3 +261,53 @@ def test_prize_validity_follows_campaign_dates(app):
     assert Campaign.query.one().claim_expiry_days == 45
     assert campaign_validity_days(start, start + timedelta(days=10, hours=1)) == 11   # part days round up
     assert campaign_validity_days(start, None) == 30                                  # open-ended
+
+
+class _FakeSMTP:
+    sent, fail = [], None
+
+    def __init__(self, *args, **kwargs):
+        if _FakeSMTP.fail:
+            raise _FakeSMTP.fail
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def login(self, *args):
+        pass
+
+    def send_message(self, msg):
+        _FakeSMTP.sent.append(msg)
+
+
+def test_email_sent_in_request_and_failures_reported(app, monkeypatch):
+    import smtplib
+    from app.models import AuditLog
+    sa = app.test_client()
+    login(sa, "super@test.com", "SuperPass1")
+    create_brand(app, sa)
+    app.config.update(MAIL_SUPPRESS_SEND=False, MAIL_SERVER="smtp.test", MAIL_USE_SSL=False, MAIL_USE_TLS=False)
+    monkeypatch.setattr(smtplib, "SMTP", _FakeSMTP)
+
+    # delivered before the response returns (no background thread needed)
+    _FakeSMTP.sent, _FakeSMTP.fail = [], None
+    r = register(app.test_client())
+    assert "mail_failed" not in r.headers["Location"]
+    assert len(_FakeSMTP.sent) == 1 and _FakeSMTP.sent[0]["To"] == "sara@example.com"
+
+    # SMTP rejects the login: the customer is told, and the error lands in the audit log
+    _FakeSMTP.fail = smtplib.SMTPAuthenticationError(535, b"Incorrect authentication data")
+    c = app.test_client()
+    r = register(c, name="Omar", email="omar@example.com", mobile="+966500000002")
+    assert "mail_failed=1" in r.headers["Location"]
+    assert b"couldn&#39;t send the email" in c.get(r.headers["Location"]).data
+    log = AuditLog.query.filter_by(action="email_failed").one()
+    assert "omar@example.com" in log.details and "Incorrect authentication data" in log.details
+
+    # the superadmin's test email shows the real SMTP error
+    r = sa.post("/admin/settings/test-email", follow_redirects=True)
+    assert b"Incorrect authentication data" in r.data
+    _FakeSMTP.fail = None

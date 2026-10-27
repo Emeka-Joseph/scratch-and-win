@@ -53,6 +53,8 @@ class Config:
     MAIL_FROM = os.getenv("MAIL_FROM", "").strip() or MAIL_USERNAME
     MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", GROUP_NAME).strip()
     MAIL_SUPPRESS_SEND = _bool("MAIL_SUPPRESS_SEND", "0")
+    # 1 = send from a background thread (faster pages). Leave 0 on cPanel/LiteSpeed, which can kill such threads.
+    MAIL_ASYNC = _bool("MAIL_ASYNC", "0")
 
     SUPERADMIN_EMAIL = os.getenv("SUPERADMIN_EMAIL", "admin@razzmattazz.com")
     SUPERADMIN_PASSWORD = os.getenv("SUPERADMIN_PASSWORD", "ChangeMe!2026")

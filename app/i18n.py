@@ -34,6 +34,8 @@ STRINGS = {
     "verify_btn": {"en": "Verify & play", "ar": "تحقّق والعب"},
     "resend": {"en": "Resend code", "ar": "إعادة إرسال الرمز"},
     "resend_in": {"en": "Resend in", "ar": "إعادة الإرسال خلال"},
+    "err_email_send": {"en": "We couldn't send the email just now. Check your email address, wait a moment and tap Resend code, or ask a staff member for help.",
+                       "ar": "تعذّر إرسال البريد الإلكتروني الآن. تحقق من بريدك الإلكتروني وانتظر قليلاً ثم اضغط إعادة إرسال الرمز، أو اطلب المساعدة من أحد الموظفين."},
     "code_resent": {"en": "A new code is on its way.", "ar": "تم إرسال رمز جديد."},
     "err_code": {"en": "That code is incorrect. Attempts left: {n}", "ar": "الرمز غير صحيح. المحاولات المتبقية: {n}"},
     "err_code_expired": {"en": "This code has expired. Please request a new one.", "ar": "انتهت صلاحية الرمز. يرجى طلب رمز جديد."},

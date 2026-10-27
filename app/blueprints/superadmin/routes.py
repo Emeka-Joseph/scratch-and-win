@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, session, url_for
 from flask_login import current_user
 
 from ... import reports
@@ -287,8 +287,14 @@ def settings():
 @bp.route("/settings/test-email", methods=["POST"])
 def test_email():
     ok = send_email(current_user.email, "Test email from the promo platform", "test", sync=True, user=current_user)
-    flash("Test email sent to " + current_user.email if ok else "Email failed — check the MAIL_* settings and server log.",
-          "success" if ok else "error")
+    db.session.commit()   # keeps the email_failed audit entry
+    cfg = current_app.config
+    if ok:
+        flash(f"Test email accepted by {cfg['MAIL_SERVER']} for {current_user.email}. If it doesn't arrive "
+              "within a few minutes, check spam and cPanel > Email Deliverability.", "success")
+    else:
+        flash(f"Email failed via {cfg['MAIL_SERVER']}:{cfg['MAIL_PORT']} as {cfg['MAIL_USERNAME'] or '(no username)'}: "
+              f"{g.get('mail_error', 'unknown error')}", "error")
     return redirect(url_for("superadmin.settings"))
 
 

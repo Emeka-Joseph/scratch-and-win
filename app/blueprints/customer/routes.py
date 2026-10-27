@@ -53,24 +53,24 @@ def _send_verify_code(p, brand):
     p.verify_attempts = 0
     p.verify_sends = (p.verify_sends or 0) + 1
     lang = p.language
-    send_email(p.email, t("email_verify_subject", lang, brand=brand.localized("name", lang), code=code),
-               "verify_code", from_name=brand.name, brand=brand, p=p, code=code, lang=lang,
-               ttl=current_app.config["VERIFY_CODE_TTL_MINUTES"])
-    return code
+    return send_email(p.email, t("email_verify_subject", lang, brand=brand.localized("name", lang), code=code),
+                      "verify_code", from_name=brand.name, brand=brand, p=p, code=code, lang=lang,
+                      ttl=current_app.config["VERIFY_CODE_TTL_MINUTES"])
 
 
 def _send_prize_email(award):
     p, brand = award.participant, award.brand
     lang = p.language
     staff_url = current_app.config["PUBLIC_BASE_URL"] + url_for("brand.redeem_award_view", token=award.qr_token)
-    send_email(p.email, t("email_prize_subject", lang, brand=brand.localized("name", lang),
+    sent = send_email(p.email, t("email_prize_subject", lang, brand=brand.localized("name", lang),
                           prize=award.localized_prize(lang)),
                "prize", from_name=brand.name, brand=brand, p=p, award=award, lang=lang,
                expires=fmt_dt(award.expires_at, "%d %b %Y"),
                prize_url=current_app.config["PUBLIC_BASE_URL"] + url_for("customer.prize", slug=brand.slug,
                                                                          token=award.qr_token),
                inline_images={"prizeqr": qr_png(staff_url, box_size=8)})
-    award.confirmation_sent_at = utcnow()
+    if sent:
+        award.confirmation_sent_at = utcnow()
 
 
 # --------------------------------------------------------------------------- language
@@ -141,7 +141,7 @@ def landing(slug, branch_code):
             db.session.add(p)
             try:
                 db.session.flush()
-                _send_verify_code(p, brand)
+                mail_ok = _send_verify_code(p, brand)
                 audit("customer_registered", p, brand_id=brand.id, actor_label=p.email, branch=branch.code)
                 db.session.commit()
             except IntegrityError:
@@ -149,7 +149,7 @@ def landing(slug, branch_code):
                 errors["form"] = t("err_already")
             else:
                 session[_skey(brand)] = p.id
-                return redirect(url_for("customer.verify", slug=slug))
+                return redirect(url_for("customer.verify", slug=slug, **({} if mail_ok else {"mail_failed": 1})))
 
     return _render("landing", brand, branch=branch, campaign=campaign, errors=errors, values=values,
                    choose_lang=not session.get("lang_chosen"))
@@ -212,6 +212,8 @@ def verify(slug):
                     error = t("err_already")
                 else:
                     return redirect(url_for("customer.scratch", slug=slug))
+    elif request.args.get("mail_failed"):
+        error = t("err_email_send")
     elif request.args.get("resent"):
         info = t("code_resent")
     wait = 0
@@ -234,10 +236,10 @@ def resend(slug):
     if p.verify_sends >= 5:
         return _render("verify", brand, p=p, error=t("err_resend_limit"), info=None, wait=0,
                        code_len=cfg["VERIFY_CODE_LENGTH"])
-    _send_verify_code(p, brand)
+    mail_ok = _send_verify_code(p, brand)
     audit("verification_resent", p, brand_id=brand.id, actor_label=p.email)
     db.session.commit()
-    return redirect(url_for("customer.verify", slug=slug, resent=1))
+    return redirect(url_for("customer.verify", slug=slug, **({"resent": 1} if mail_ok else {"mail_failed": 1})))
 
 
 @bp.route("/p/<slug>/restart", methods=["POST"])
