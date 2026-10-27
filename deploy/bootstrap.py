@@ -24,6 +24,9 @@ def main():
     app = create_app()
     with app.app_context():
         url = db.engine.url
+        if not app.config["IS_PRODUCTION"]:
+            print("WARNING: FLASK_ENV is not 'production' -- this server is using a development .env, "
+                  "not the live settings. Replace .env with your production file before going live.")
         print(f"Database: {url.get_backend_name()} {url.host or ''}/{url.database}")
         db.session.execute(text("SELECT 1"))
         before = set(inspect(db.engine).get_table_names())
