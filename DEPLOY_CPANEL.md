@@ -30,7 +30,7 @@ cPanel → **Setup Python App** → **Create Application**:
 
 | Field | Value |
 |---|---|
-| Python version | 3.11 (or the newest offered, minimum 3.9) |
+| Python version | the newest offered (3.9 or higher) |
 | Application root | `razzmattazz_promo` (a folder in your home directory, **not** inside `public_html`) |
 | Application URL | `promo.yourdomain.com` (leave the path empty) |
 | Application startup file | `passenger_wsgi.py` |
@@ -39,7 +39,7 @@ cPanel → **Setup Python App** → **Create Application**:
 Click **Create**, then **Stop App** while you upload the files.
 
 At the top of the page, cPanel shows a command like
-`source /home/cpuser/virtualenv/razzmattazz_promo/3.11/bin/activate && cd /home/cpuser/razzmattazz_promo`.
+`source /home/cpuser/virtualenv/razzmattazz_promo/3.9/bin/activate && cd /home/cpuser/razzmattazz_promo`.
 Copy it; you need it for SSH.
 
 ## 5 · Upload the code
@@ -69,7 +69,7 @@ Back in **Setup Python App** → edit the app:
 
 **Or over SSH / cPanel Terminal:**
 ```bash
-source /home/cpuser/virtualenv/razzmattazz_promo/3.11/bin/activate && cd /home/cpuser/razzmattazz_promo
+source /home/cpuser/virtualenv/razzmattazz_promo/3.9/bin/activate && cd /home/cpuser/razzmattazz_promo
 pip install -r requirements.txt
 python deploy/bootstrap.py
 ```
