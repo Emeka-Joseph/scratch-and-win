@@ -1,0 +1,41 @@
+{% extends "layouts/admin.html" %}
+{% from "partials/_macros.html" import pagination %}
+{% block title %}Audit log{% endblock %}
+{% block crumb %}Governance{% endblock %}
+{% block actions %}
+<div class="dropdown">
+  <button class="btn btn-ghost" data-dropdown type="button"><i class="bi bi-download"></i> Export <i class="bi bi-chevron-down small"></i></button>
+  <div class="dropdown-menu">
+    <a href="{{ url_for('superadmin.export', dataset='audit', fmt='xlsx', brand=args.get('brand', '')) }}"><i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)</a>
+    <a href="{{ url_for('superadmin.export', dataset='audit', fmt='csv', brand=args.get('brand', '')) }}"><i class="bi bi-filetype-csv"></i> CSV</a>
+  </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <form class="filters" method="get">
+    <div class="field grow"><label>Actor</label><input class="input input-sm" name="q" value="{{ args.get('q', '') }}" placeholder="Email"></div>
+    <div class="field"><label>Brand</label><select class="input input-sm" name="brand"><option value="">All</option>
+      {% for b in brands %}<option value="{{ b.id }}" {{ 'selected' if args.get('brand') == b.id|string }}>{{ b.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Action</label><select class="input input-sm" name="action"><option value="">All actions</option>
+      {% for a in actions %}<option value="{{ a }}" {{ 'selected' if args.get('action') == a }}>{{ a.replace('_', ' ')|capitalize }}</option>{% endfor %}</select></div>
+    <button class="btn btn-dark btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+  </form>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Time</th><th>Actor</th><th>Brand</th><th>Action</th><th>Target</th><th>Details</th><th>IP</th></tr></thead>
+    <tbody>
+    {% for log in page.items %}
+      <tr>
+        <td class="nowrap">{{ log.created_at|dt('%d %b %Y, %H:%M:%S') }}</td>
+        <td><div class="strong">{{ log.actor_label }}</div><div class="sub">{{ log.actor_role }}</div></td>
+        <td>{{ log.brand.name if log.brand else '—' }}</td>
+        <td><span class="badge b-{{ 'danger' if 'failed' in log.action or 'blocked' in log.action else ('success' if log.action == 'prize_redeemed' else 'muted') }}">{{ log.action.replace('_', ' ') }}</span></td>
+        <td class="sub">{{ log.target_type or '' }} {{ ('#' ~ log.target_id) if log.target_id else '' }}</td>
+        <td class="sub" style="max-width:340px">{% for k, v in log.details_dict.items() %}<span class="nowrap"><b>{{ k }}</b>: {{ v }}</span>{{ ' · ' if not loop.last }}{% endfor %}</td>
+        <td class="sub">{{ log.ip_address }}</td>
+      </tr>
+    {% else %}<tr><td colspan="7"><div class="empty"><i class="bi bi-shield-check"></i>No events.</div></td></tr>{% endfor %}
+    </tbody></table></div>
+  {{ pagination(page, 'superadmin.audit_log', args) }}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "layouts/brand.html" %}
+{% block title %}Campaign QR codes{% endblock %}
+{% block crumb %}{{ brand.name }} · Branch tools{% endblock %}
+{% block content %}
+<div class="card card-pad" style="margin-bottom:18px;display:flex;gap:16px;align-items:center">
+  <i class="bi bi-info-circle-fill" style="font-size:22px;color:var(--accent)"></i>
+  <div><strong>How it works:</strong> print one poster per branch. When a bill reaches
+    <b>{{ campaign.currency if campaign else '' }} {{ campaign.min_spend|money if campaign else '—' }}</b>, staff present the printed QR.
+    The guest scans it, registers, verifies their email and scratches to win. The QR is static: it always opens your live campaign.</div>
+</div>
+<div class="grid g-3">
+  {% for b in branches %}{% set url = customer_url(b) %}
+  <div class="card qr-card">
+    <img class="qr" src="{{ url_for('brand.qr_png_view', branch_id=b.id) }}" alt="QR for {{ b.name }}">
+    <h3 style="margin-top:14px">{{ b.name }} {% if not b.is_active %}<span class="badge b-disabled">Off</span>{% endif %}</h3>
+    <div class="copy-box" style="margin:12px 0"><span>{{ url }}</span><button class="btn btn-ghost btn-sm" type="button" data-copy="{{ url }}"><i class="bi bi-clipboard"></i></button></div>
+    <div class="row" style="justify-content:center">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('brand.qr_poster', branch_id=b.id) }}" target="_blank"><i class="bi bi-printer"></i> Print poster</a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('brand.qr_png_view', branch_id=b.id, download=1) }}"><i class="bi bi-download"></i> PNG</a>
+      <a class="btn btn-ghost btn-sm" href="{{ url }}" target="_blank"><i class="bi bi-phone"></i> Open</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column:1/-1"><div class="empty">Add a branch to generate its QR code. <a class="link" href="{{ url_for('brand.branches') }}">Branches</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

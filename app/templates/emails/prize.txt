@@ -1,0 +1,11 @@
+{{ t('congrats', lang) }}
+
+{{ t('hello', lang) }} {{ p.full_name }}, {{ t('you_won', lang) }}: {{ award.localized_prize(lang) }}
+
+{{ t('claim_code', lang) }}: {{ award.claim_code }}
+{{ t('valid_until', lang) }}: {{ expires }}
+
+{{ t('show_staff', lang) }}
+{{ prize_url }}
+
+{{ brand.name }} · {{ GROUP_NAME }}

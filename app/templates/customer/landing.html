@@ -1,0 +1,83 @@
+{% extends "layouts/customer.html" %}
+{% block step_label %}{{ branch.localized_name(lang) }}{% endblock %}
+{% block content %}
+<div class="steps"><span class="on"></span><span></span><span></span></div>
+<h2>{{ campaign.localized_name(lang) }}</h2>
+<p class="lead">{{ t('hero_sub') }}</p>
+
+{% if campaign.min_spend and campaign.min_spend > 0 %}
+<div class="spend-banner"><i class="bi bi-receipt"></i> {{ t('min_spend_note', amount=campaign.currency ~ ' ' ~ (campaign.min_spend|money)) }}</div>
+{% endif %}
+
+{% if errors.form %}<div class="alert error"><i class="bi bi-exclamation-circle-fill"></i> {{ errors.form }}</div>{% endif %}
+
+<form method="post" id="reg-form" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field">
+    <label for="full_name">{{ t('full_name') }}</label>
+    <input class="input {{ 'err' if errors.full_name }}" id="full_name" name="full_name" autocomplete="name" required value="{{ values.get('full_name', '') }}">
+    {% if errors.full_name %}<div class="err-text">{{ errors.full_name }}</div>{% endif %}
+  </div>
+  <div class="field">
+    <label for="mobile">{{ t('mobile') }}</label>
+    <input class="input {{ 'err' if errors.mobile }}" id="mobile" name="mobile" type="tel" inputmode="tel" autocomplete="tel" placeholder="+966 5X XXX XXXX" required value="{{ values.get('mobile', '') }}">
+    {% if errors.mobile %}<div class="err-text">{{ errors.mobile }}</div>{% endif %}
+  </div>
+  <div class="field">
+    <label for="email">{{ t('email') }}</label>
+    <input class="input {{ 'err' if errors.email }}" id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required value="{{ values.get('email', '') }}">
+    {% if errors.email %}<div class="err-text">{{ errors.email }}</div>{% endif %}
+  </div>
+
+  <label class="check">
+    <input type="checkbox" name="accept_terms" id="accept_terms" value="1" {{ 'checked' if request.form.get('accept_terms') }}>
+    <span>{{ t('accept_terms_pre') }} <a href="#" id="open-terms">{{ t('terms') }}</a></span>
+  </label>
+  {% if errors.terms %}<div class="err-text" style="margin-top:-8px;margin-bottom:10px">{{ errors.terms }}</div>{% endif %}
+  <label class="check">
+    <input type="checkbox" name="marketing_consent" value="1" {{ 'checked' if request.form.get('marketing_consent') }}>
+    <span>{{ t('marketing') }}</span>
+  </label>
+
+  <button class="btn btn-primary" id="submit-btn" type="submit" style="margin-top:20px" {{ 'disabled' if not request.form.get('accept_terms') }}>
+    {{ t('submit') }} <i class="bi bi-arrow-{{ 'left' if dir == 'rtl' else 'right' }}"></i></button>
+</form>
+<div class="note"><i class="bi bi-shield-check"></i><span>{{ t('one_per_customer') }}</span></div>
+{% endblock %}
+
+{% block overlay %}
+<div class="modal" id="terms-modal" role="dialog" aria-modal="true">
+  <div class="modal-sheet">
+    <h3 style="margin-top:0">{{ t('terms') }}</h3>
+    <div class="terms">{{ campaign.terms(lang) or t('one_per_customer') }}</div>
+    <button class="btn btn-primary" type="button" id="accept-close" style="margin-top:20px">{{ t('continue') }}</button>
+    <button class="btn btn-ghost" type="button" id="close-terms">{{ t('close') }}</button>
+  </div>
+</div>
+{% if choose_lang %}
+<div class="lang-overlay" id="lang-overlay">
+  <div class="brand-mark">{% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="">{% else %}{{ brand.name[:1] }}{% endif %}</div>
+  <h2>Choose your language</h2>
+  <div class="sub" style="font-family:Tajawal;font-size:20px;font-weight:700">اختر لغتك</div>
+  <div class="lang-choices">
+    <a href="?lang=en">English <span><i class="bi bi-arrow-right"></i></span></a>
+    <a href="?lang=ar" class="ar" dir="rtl">العربية <span><i class="bi bi-arrow-left"></i></span></a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const cb = document.getElementById("accept_terms"), btn = document.getElementById("submit-btn");
+  const modal = document.getElementById("terms-modal");
+  cb.addEventListener("change", () => (btn.disabled = !cb.checked));
+  document.getElementById("open-terms").addEventListener("click", e => { e.preventDefault(); modal.classList.add("open"); });
+  document.getElementById("close-terms").addEventListener("click", () => modal.classList.remove("open"));
+  document.getElementById("accept-close").addEventListener("click", () => { cb.checked = true; btn.disabled = false; modal.classList.remove("open"); });
+  modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+  document.getElementById("reg-form").addEventListener("submit", () => { btn.disabled = true; btn.style.opacity = .7; });
+})();
+</script>
+{% endblock %}

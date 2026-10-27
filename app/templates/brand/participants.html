@@ -1,0 +1,15 @@
+{% extends "layouts/brand.html" %}
+{% from "partials/_macros.html" import pagination, export_menu %}
+{% block title %}Participants{% endblock %}
+{% block crumb %}{{ brand.name }}{% endblock %}
+{% block actions %}
+  {{ export_menu('brand.export', 'participants', args, 'Export filtered') }}
+  <a class="btn btn-ghost" href="{{ url_for('brand.export', dataset='redemptions', fmt='xlsx') }}"><i class="bi bi-bag-check"></i> Redemptions .xlsx</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+  {% with brands=None %}{% include "partials/_participant_filters.html" %}{% endwith %}
+  {% with detail_endpoint='brand.participant_detail', show_brand=False %}{% include "partials/_participants_table.html" %}{% endwith %}
+  {{ pagination(page, 'brand.participants', args) }}
+</div>
+{% endblock %}

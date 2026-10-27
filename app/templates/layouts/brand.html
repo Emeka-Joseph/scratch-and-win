@@ -1,0 +1,44 @@
+{% extends "layouts/_shell.html" %}
+{% block site_name %}{{ brand.name }}{% endblock %}
+{% block theme %}
+{% set pal = brand_palette(brand) %}
+<style>
+  :root {
+    --accent: {{ pal.primary }}; --accent-rgb: {{ pal.primary_rgb }}; --accent-dark: {{ pal.primary_dark }};
+    --accent-soft: {{ pal.primary_soft }}; --on-accent: {{ pal.on_primary }};
+    --side-bg: {{ pal.secondary }}; --side-fg: {{ pal.on_secondary }};
+    --side-muted: {{ 'rgba(255,255,255,.55)' if pal.on_secondary == '#FFFFFF' else 'rgba(0,0,0,.5)' }};
+    --side-hover: {{ 'rgba(255,255,255,.08)' if pal.on_secondary == '#FFFFFF' else 'rgba(0,0,0,.06)' }};
+  }
+</style>
+{% endblock %}
+{% block acting %}
+{% if acting %}
+<div class="acting-bar"><span><i class="bi bi-incognito"></i> Superadmin view — you are managing <b>{{ brand.name }}</b>. Every change is audited under your name.</span>
+  <a href="{{ url_for('superadmin.stop_acting') }}">Back to group console</a></div>
+{% endif %}
+{% endblock %}
+{% block sidebar %}
+{% set ep = request.endpoint or '' %}
+<a class="logo" href="{{ url_for('brand.dashboard') }}">
+  <div class="logo-mark">{% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="">{% else %}{{ brand.name[:1] }}{% endif %}</div>
+  <div class="logo-text"><strong>{{ brand.name }}</strong><span>{{ 'Branch: ' ~ current_user.branch.name if current_user.is_staff and current_user.branch else 'Brand console' }}</span></div>
+</a>
+<nav class="nav">
+  {% if not current_user.is_staff %}
+  <div class="nav-label">Overview</div>
+  <a href="{{ url_for('brand.dashboard') }}" class="{{ 'active' if ep == 'brand.dashboard' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+  <a href="{{ url_for('brand.participants') }}" class="{{ 'active' if ep.startswith('brand.participant') }}"><i class="bi bi-people"></i> Participants</a>
+  {% endif %}
+  <div class="nav-label">Branch tools</div>
+  <a href="{{ url_for('brand.redeem') }}" class="{{ 'active' if ep.startswith('brand.redeem') }}"><i class="bi bi-qr-code-scan"></i> Scan &amp; redeem</a>
+  {% if not current_user.is_staff %}
+  <a href="{{ url_for('brand.qr_codes') }}" class="{{ 'active' if ep.startswith('brand.qr') }}"><i class="bi bi-qr-code"></i> Campaign QR codes</a>
+  <div class="nav-label">Setup</div>
+  <a href="{{ url_for('brand.campaign') }}" class="{{ 'active' if ep.startswith('brand.campaign') }}"><i class="bi bi-megaphone"></i> Campaign</a>
+  <a href="{{ url_for('brand.prizes') }}" class="{{ 'active' if ep.startswith('brand.prize') }}"><i class="bi bi-trophy"></i> Prizes</a>
+  <a href="{{ url_for('brand.branches') }}" class="{{ 'active' if ep.startswith('brand.branch') }}"><i class="bi bi-geo-alt"></i> Branches</a>
+  <a href="{{ url_for('brand.staff') }}" class="{{ 'active' if ep.startswith('brand.staff') }}"><i class="bi bi-person-badge"></i> Team</a>
+  {% endif %}
+</nav>
+{% endblock %}

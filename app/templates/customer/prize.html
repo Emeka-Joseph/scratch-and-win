@@ -1,0 +1,31 @@
+{% extends "layouts/customer.html" %}
+{% block title %}{{ award.localized_prize(lang) }}{% endblock %}
+{% block hero_extra %}{% endblock %}
+{% block content %}
+{% set s = award.status %}
+<div class="ticket">
+  <div class="ticket-top">
+    <div class="won">{{ t('you_won') }}</div>
+    <h3>{{ award.localized_prize(lang) }}</h3>
+  </div>
+  <div class="perf"></div>
+  <div class="ticket-body">
+    {% if s == 'redeemed' %}
+      <div class="message-icon" style="background:#E6F5EC;color:#13804A"><i class="bi bi-bag-check-fill"></i></div>
+      <div class="status-stamp ok"><i class="bi bi-check2-circle"></i> {{ t('status_redeemed') }}</div>
+    {% elif s == 'expired' %}
+      <div class="status-stamp bad"><i class="bi bi-hourglass-bottom"></i> {{ t('status_expired') }}</div>
+    {% else %}
+      <img class="qr" src="{{ url_for('customer.award_qr', token=award.qr_token) }}" alt="QR">
+      <div style="font-size:12px;color:#777;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-top:12px">{{ t('claim_code') }}</div>
+      <div style="font-family:ui-monospace,Consolas,monospace;font-size:28px;font-weight:800;letter-spacing:.22em;direction:ltr">{{ award.claim_code }}</div>
+      <p style="color:#555;margin:14px 0 0;font-size:14.5px">{{ t('show_staff') }}</p>
+    {% endif %}
+    <div class="ticket-meta">
+      <div>{{ t('full_name') }}<b>{{ p.full_name }}</b></div>
+      <div style="text-align:end">{{ t('valid_until') }}<b>{{ award.expires_at|dt('%d %b %Y') }}</b></div>
+    </div>
+  </div>
+</div>
+{% if s not in ('redeemed', 'expired') %}<p class="note" style="justify-content:center"><i class="bi bi-phone"></i> {{ t('save_screenshot') }}</p>{% endif %}
+{% endblock %}

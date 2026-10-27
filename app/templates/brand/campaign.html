@@ -1,0 +1,64 @@
+{% extends "layouts/brand.html" %}
+{% from "partials/_macros.html" import status_badge %}
+{% block title %}Campaign{% endblock %}
+{% block crumb %}{{ brand.name }} · Setup{% endblock %}
+{% macro dtval(d) %}{{ d|dt('%Y-%m-%dT%H:%M') if d else '' }}{% endmacro %}
+{% block content %}
+<div class="grid g-main" style="align-items:start">
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card-head"><div><h3>{{ c.name or 'Campaign' }}</h3><p>Rules your staff and customers follow</p></div>{% if c.id %}{{ status_badge(c.status) }}{% endif %}</div>
+    <div class="card-body">
+      <div class="section-title">Qualifying rule</div>
+      <div class="form-grid">
+        <div class="field"><label>Minimum qualifying bill</label>
+          <div class="input-group"><input class="input" type="number" step="0.01" min="0" name="min_spend" value="{{ c.min_spend|money if c.min_spend is not none else 0 }}">
+            <input class="input" name="currency" value="{{ c.currency or 'SAR' }}" style="max-width:90px;border-radius:0 10px 10px 0;border-left:0"></div>
+          <div class="hint">Staff check the bill and only show the QR code when it meets this amount. It also appears on your printed posters.</div></div>
+        <div class="field"><label>Fallback voucher discount</label>
+          <div class="input-group"><input class="input" type="number" min="1" max="100" name="voucher_percent" value="{{ c.voucher_percent or 10 }}">
+            <span class="btn btn-ghost" style="border-radius:0 10px 10px 0;border-left:0">%</span></div>
+          <div class="hint">Customers get a "{{ c.voucher_percent or 10 }}% Discount Voucher" when the other prizes run out.</div></div>
+        <div class="field full"><label class="check"><input type="checkbox" name="fallback_enabled" value="1" {{ 'checked' if c.fallback_enabled }}> Give the fallback voucher when prizes run out (if off, the campaign shows "all gifts claimed")</label></div>
+      </div>
+
+      <div class="section-title">Schedule</div>
+      <div class="form-grid">
+        <div class="field"><label>Campaign name (English)</label><input class="input" name="campaign_name" value="{{ c.name or '' }}"></div>
+        <div class="field"><label>Campaign name (Arabic)</label><input class="input" dir="rtl" name="campaign_name_ar" value="{{ c.name_ar or '' }}"></div>
+        <div class="field"><label>Starts</label><input class="input" type="datetime-local" name="starts_at" value="{{ dtval(c.starts_at) }}"><div class="hint">Blank = starts immediately</div></div>
+        <div class="field"><label>Ends</label><input class="input" type="datetime-local" name="ends_at" value="{{ dtval(c.ends_at) }}"><div class="hint">Blank = runs until paused</div></div>
+        <div class="field"><label>Prize valid for (days after winning)</label><input class="input" type="number" min="1" max="365" name="claim_expiry_days" value="{{ c.claim_expiry_days or 30 }}"></div>
+        <div class="field" style="align-self:center"><label class="check"><input type="checkbox" name="is_active" value="1" {{ 'checked' if c.is_active or not c.id }}> Campaign is active</label></div>
+      </div>
+
+      <div class="section-title">Terms &amp; conditions</div>
+      <div class="form-grid">
+        <div class="field"><label>English</label><textarea class="input" name="terms_en" rows="7">{{ c.terms_en or '' }}</textarea></div>
+        <div class="field"><label>Arabic</label><textarea class="input" dir="rtl" name="terms_ar" rows="7">{{ c.terms_ar or '' }}</textarea></div>
+      </div>
+      <div class="row" style="justify-content:flex-end"><button class="btn btn-primary"><i class="bi bi-check2"></i> Save campaign</button></div>
+    </div>
+  </form>
+
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><div><h3>All campaigns</h3><p>Only one can be active at a time</p></div></div>
+      <ul class="activity">
+        {% for x in campaigns %}
+        <li style="align-items:center"><div style="flex:1"><strong>{{ x.name }}</strong><time>Created {{ x.created_at|dt('%d %b %Y') }} · {{ x.prizes|length }} prizes</time></div>
+          {% if x.id == c.id %}{{ status_badge(x.status) }}{% else %}
+          <form method="post" action="{{ url_for('brand.campaign_activate', cid=x.id) }}" data-confirm="Switch the active campaign to '{{ x.name }}'?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-ghost btn-sm">Activate</button></form>{% endif %}
+        </li>
+        {% else %}<li class="muted">None yet</li>{% endfor %}
+      </ul>
+      <form method="post" action="{{ url_for('brand.campaign_new') }}" class="inline-form" data-confirm="Start a new campaign? The current one will be paused; its winners can still redeem.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="input-group"><input class="input" name="name" placeholder="New campaign name" required><button class="btn btn-dark">Start new</button></div>
+        <div class="hint muted small" style="margin-top:6px">Each new campaign is a fresh promo: customers can take part again, subject to the group's uniqueness setting.</div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

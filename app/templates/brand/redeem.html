@@ -1,0 +1,67 @@
+{% extends "layouts/brand.html" %}
+{% block title %}Scan &amp; redeem{% endblock %}
+{% block crumb %}{{ brand.name }}{% if current_user.branch %} · {{ current_user.branch.name }}{% endif %}{% endblock %}
+{% block content %}
+<div class="grid g-main" style="align-items:start">
+  <div class="card">
+    <div class="card-head"><div><h3>Scan the customer's prize QR</h3><p>Point the camera at the QR on the customer's phone or email</p></div>
+      <button class="btn btn-primary" id="start-scan" type="button"><i class="bi bi-camera"></i> Start camera</button></div>
+    <div class="card-body">
+      <div class="scanner"><div id="reader"></div>
+        <div class="placeholder" id="scan-placeholder"><div><i class="bi bi-qr-code-scan" style="font-size:54px;display:block;margin-bottom:10px"></i>Tap <b>Start camera</b> to scan.<br><span class="small">Or open the link with your phone's camera app — you'll land on the prize directly.</span></div></div>
+      </div>
+      <div id="scan-error" class="small" style="color:var(--danger);margin-top:10px"></div>
+      <div class="section-title" style="margin-top:22px">Or enter the claim code</div>
+      <form method="get" class="input-group">
+        <input class="input mono" name="code" placeholder="8-character code, e.g. K7M2QX9A" maxlength="12" autocomplete="off" style="text-transform:uppercase;letter-spacing:.15em;font-size:18px" required>
+        <button class="btn btn-dark"><i class="bi bi-search"></i> Look up</button>
+      </form>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="grid g-2">
+      <div class="card kpi dark"><div class="label"><i class="bi bi-bag-check"></i> Delivered today</div><div class="value">{{ today.redeemed }}</div>
+        <div class="sub">{{ current_user.branch.name if current_user.is_staff and current_user.branch else 'All branches' }}</div></div>
+      <div class="card kpi"><div class="label"><i class="bi bi-person-plus"></i> Sign-ups today</div><div class="value">{{ today.registrations }}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Recently delivered</h3></div>
+      <ul class="activity">
+        {% for a in today.recent %}
+        <li><div class="dot green"><i class="bi bi-check2"></i></div>
+          <div><strong>{{ a.prize_name }}</strong> — {{ a.participant.full_name }}<time>{{ a.redeemed_at|dt('%H:%M') }} · <code>{{ a.claim_code }}</code>{% if a.redemption_ref %} · {{ a.redemption_ref }}{% endif %}{% if a.redeemed_by %} · {{ a.redeemed_by.full_name }}{% endif %}</time></div></li>
+        {% else %}<li class="muted">Nothing delivered yet today.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function () {
+  const btn = document.getElementById("start-scan"), err = document.getElementById("scan-error");
+  let scanner = null, busy = false;
+  btn.addEventListener("click", async () => {
+    if (scanner) { await scanner.stop(); scanner = null; btn.innerHTML = '<i class="bi bi-camera"></i> Start camera'; return; }
+    err.textContent = "";
+    document.getElementById("scan-placeholder").style.display = "none";
+    scanner = new Html5Qrcode("reader");
+    try {
+      await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 240, height: 240 } }, text => {
+        if (busy) return;
+        const m = text.match(/\/brand\/redeem\/([A-Za-z0-9_\-]+)/);
+        if (m) { busy = true; window.location = "{{ url_for('brand.redeem') }}/" + m[1]; return; }
+        const code = text.replace(/[^A-Za-z0-9]/g, "");
+        if (code.length === 8) { busy = true; window.location = "?code=" + code; return; }
+        err.textContent = "That QR code isn't a prize code from this promotion.";
+      });
+      btn.innerHTML = '<i class="bi bi-stop-circle"></i> Stop camera';
+    } catch (e) {
+      err.textContent = "Camera unavailable: " + e + ". Camera access needs HTTPS (or localhost) and permission.";
+      document.getElementById("scan-placeholder").style.display = "grid"; scanner = null;
+    }
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "layouts/admin.html" %}
+{% from "partials/_macros.html" import brand_logo, export_menu %}
+{% block title %}Sub-brands{% endblock %}
+{% block crumb %}{{ GROUP_NAME }}{% endblock %}
+{% block actions %}
+  {{ export_menu('superadmin.export', 'brands', request.args) }}
+  <a class="btn btn-primary" href="{{ url_for('superadmin.brand_new') }}"><i class="bi bi-plus-lg"></i> New sub-brand</a>
+{% endblock %}
+{% block content %}
+<div class="grid g-3">
+  {% for r in rows %}
+  {% set b = r.brand %}{% set c = b.current_campaign %}
+  <div class="card" style="overflow:hidden">
+    <div style="height:72px;background:linear-gradient(120deg, {{ b.secondary_color }}, {{ b.primary_color }});position:relative">
+      <div style="position:absolute;left:20px;bottom:-26px">{{ brand_logo(b, 'lg') }}</div>
+      <div style="position:absolute;right:14px;top:14px">
+        {% if not b.is_active %}<span class="badge b-disabled">Disabled</span>{% elif c %}<span class="badge b-{{ c.status }}">{{ c.status|title }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="card-body" style="padding-top:38px">
+      <div class="row between">
+        <div><h3 style="font-size:18px">{{ b.name }}</h3><div class="muted small">{{ b.name_ar or '' }} · /{{ b.slug }}</div></div>
+        <div class="swatches"><span style="background:{{ b.primary_color }}"></span><span style="background:{{ b.secondary_color }}"></span><span style="background:{{ b.background_color }}"></span></div>
+      </div>
+      <div class="grid g-3" style="gap:8px;margin-top:16px;text-align:center">
+        <div><div class="strong" style="font-size:20px">{{ r.registrations|num }}</div><div class="muted small">Entries</div></div>
+        <div><div class="strong" style="font-size:20px">{{ r.awarded|num }}</div><div class="muted small">Won</div></div>
+        <div><div class="strong" style="font-size:20px">{{ r.redeemed|num }}</div><div class="muted small">Redeemed</div></div>
+      </div>
+      <div class="row" style="margin-top:18px">
+        <a class="btn btn-dark btn-sm" href="{{ url_for('superadmin.brand_detail', brand_id=b.id) }}">Details</a>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('superadmin.brand_manage', brand_id=b.id) }}"><i class="bi bi-box-arrow-up-right"></i> Open console</a>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('superadmin.brand_edit', brand_id=b.id) }}"><i class="bi bi-palette"></i></a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column:1/-1"><div class="empty"><i class="bi bi-shop"></i>No sub-brands yet.<br><br>
+    <a class="btn btn-primary" href="{{ url_for('superadmin.brand_new') }}"><i class="bi bi-plus-lg"></i> Create the first sub-brand</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

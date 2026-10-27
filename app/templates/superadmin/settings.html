@@ -1,0 +1,51 @@
+{% extends "layouts/admin.html" %}
+{% block title %}Settings{% endblock %}
+{% block crumb %}Governance{% endblock %}
+{% block content %}
+<div class="grid g-2" style="align-items:start">
+  <div class="card">
+    <div class="card-head"><div><h3>One customer, one gift</h3><p>Where an email or mobile number may win only once</p></div></div>
+    <form class="card-body" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% for val, title, desc in [('campaign', 'Per campaign', 'A customer can win once in each sub-brand campaign.'),
+                                  ('brand', 'Per sub-brand', 'A customer can win once per sub-brand, across all its campaigns.'),
+                                  ('group', 'Across the whole group', 'A customer can win only once across every Razzmattazz sub-brand.')] %}
+      <label class="check card" style="padding:14px 16px;margin-bottom:10px;box-shadow:none">
+        <input type="radio" name="uniqueness_scope" value="{{ val }}" {{ 'checked' if scope == val }}>
+        <span><span class="strong">{{ title }}</span><br><span class="muted small">{{ desc }}</span></span>
+      </label>
+      {% endfor %}
+      <button class="btn btn-primary">Save</button>
+    </form>
+  </div>
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><div><h3>Email delivery</h3><p>Verification codes, prize confirmations and credentials</p></div></div>
+      <div class="card-body">
+        <dl class="kv-list" style="grid-template-columns:120px 1fr">
+          <dt>SMTP server</dt><dd>{{ config.MAIL_SERVER }}:{{ config.MAIL_PORT }} {{ '(TLS)' if config.MAIL_USE_TLS else '' }}{{ '(SSL)' if config.MAIL_USE_SSL else '' }}</dd>
+          <dt>Sender</dt><dd>{{ config.MAIL_FROM }}</dd>
+          <dt>Mode</dt><dd>{{ 'Console only (suppressed)' if config.MAIL_SUPPRESS_SEND else 'Live sending' }}</dd>
+        </dl>
+        <form method="post" action="{{ url_for('superadmin.test_email') }}" style="margin-top:16px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-dark btn-sm"><i class="bi bi-send"></i> Send test email to {{ current_user.email }}</button>
+        </form>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><h3>Group superadmins</h3><p>Full access to every sub-brand</p></div></div>
+      <ul class="activity">{% for u in superadmins %}<li><div class="avatar" style="background:var(--accent);color:#fff">{{ u.full_name[:1] }}</div><div><strong>{{ u.full_name }}</strong><time>{{ u.email }}</time></div></li>{% endfor %}</ul>
+      <form method="post" action="{{ url_for('superadmin.superadmin_add') }}" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-grid">
+          <div class="field"><input class="input" name="full_name" placeholder="Full name" required></div>
+          <div class="field"><input class="input" type="email" name="email" placeholder="Email" required></div>
+          <div class="field"><input class="input" type="password" name="password" placeholder="Password (min 8)" required autocomplete="new-password"></div>
+          <div class="field"><button class="btn btn-dark btn-block">Add superadmin</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

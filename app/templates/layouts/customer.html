@@ -1,0 +1,41 @@
+{% set pal = brand_palette(brand) %}
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir }}">
+<head>
+  {% include "layouts/_head.html" %}
+  <meta name="theme-color" content="{{ pal.secondary }}">
+  <title>{% block title %}{{ t('scratch_win') }}{% endblock %} · {{ brand.localized('name', lang) }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/customer.css') }}">
+  {% set ink = pal.primary if pal.on_primary == '#FFFFFF' else pal.primary_dark %}
+  <style>
+    :root {
+      --primary: {{ pal.primary }}; --primary-rgb: {{ pal.primary_rgb }}; --on-primary: {{ pal.on_primary }};
+      --primary-soft: {{ pal.primary_soft }}; --primary-ink: {{ ink }};
+      --secondary: {{ pal.secondary }}; --on-secondary: {{ pal.on_secondary }};
+      --bg: {{ pal.background }}; --on-bg: {{ pal.on_background }};
+      --muted-on-bg: {{ 'rgba(255,255,255,.6)' if pal.on_background == '#FFFFFF' else 'rgba(0,0,0,.5)' }};
+      --surface: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero {{ 'on-light' if pal.on_secondary != '#FFFFFF' }}">
+    <div class="hero-top">
+      <span style="font-size:12px;font-weight:700;opacity:.7">{% block step_label %}{% endblock %}</span>
+      <a class="lang-pill" href="{{ url_for('customer.set_lang', lang='en' if lang == 'ar' else 'ar', next=request.full_path) }}"><i class="bi bi-translate"></i> {{ t('language') }}</a>
+    </div>
+    <div class="brand-mark">{% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="{{ brand.name }}">{% else %}{{ brand.localized('name', lang)[:1] }}{% endif %}</div>
+    <h1>{{ brand.localized('name', lang) }}</h1>
+    {% if brand.localized('tagline', lang) %}<p class="tagline">{{ brand.localized('tagline', lang) }}</p>{% endif %}
+    {% block hero_extra %}<span class="chip"><i class="bi bi-stars"></i> {{ t('scratch_win') }}</span>{% endblock %}
+  </header>
+
+  <main class="sheet">{% block content %}{% endblock %}</main>
+
+  <footer class="foot">{{ t('powered_by') }} <strong>{{ GROUP_NAME }}</strong></footer>
+</div>
+{% block overlay %}{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

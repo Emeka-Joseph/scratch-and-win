@@ -1,0 +1,10 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+{% set pal = brand_palette(brand) %}
+<p style="margin:0 0 6px">{{ t('hello', lang) }} {{ p.full_name }},</p>
+<p style="margin:0 0 20px">{{ t('email_verify_body', lang) }}</p>
+<div style="text-align:center;margin:0 0 22px">
+  <div dir="ltr" style="display:inline-block;font-family:Consolas,Menlo,monospace;font-size:34px;font-weight:800;letter-spacing:10px;padding:16px 22px;border-radius:14px;background:{{ pal.primary_soft }};color:#111;border:2px dashed {{ pal.primary }}">{{ code }}</div>
+</div>
+<p style="margin:0;color:#6a6a70;font-size:13px">{{ t('email_verify_expiry', lang, m=ttl) }}</p>
+{% endblock %}

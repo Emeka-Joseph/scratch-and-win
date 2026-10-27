@@ -1,0 +1,32 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const css = getComputedStyle(document.documentElement);
+  const accent = css.getPropertyValue("--accent").trim() || "#D7192D";
+  const dark = "#111111";
+  Chart.defaults.font.family = css.getPropertyValue("--font");
+  Chart.defaults.color = "#6B6B70";
+  (window.__charts || []).forEach(({ id, series }) => {
+    const ctx = document.getElementById(id); if (!ctx) return;
+    const g = ctx.getContext("2d").createLinearGradient(0, 0, 0, 260);
+    g.addColorStop(0, accent + "40"); g.addColorStop(1, accent + "00");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: series.labels,
+        datasets: [
+          { label: "Registrations", data: series.registrations, borderColor: "#B9B8B2", backgroundColor: "transparent", borderDash: [5, 4], tension: .35, pointRadius: 0, borderWidth: 2 },
+          { label: "Prizes won", data: series.awards, borderColor: accent, backgroundColor: g, fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: accent, borderWidth: 2.5 },
+          { label: "Redeemed", data: series.redemptions, borderColor: dark, backgroundColor: "transparent", tension: .35, pointRadius: 3, pointBackgroundColor: dark, borderWidth: 2.5 }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8, padding: 18 } },
+                   tooltip: { backgroundColor: "#111", padding: 12, cornerRadius: 10 } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#EEEDE9" }, border: { display: false } } }
+      }
+    });
+  });
+})();
+</script>

@@ -1,0 +1,61 @@
+{% extends "layouts/customer.html" %}
+{% block title %}{{ t('verify_title') }}{% endblock %}
+{% block hero_extra %}{% endblock %}
+{% block content %}
+<div class="steps"><span class="on"></span><span class="on"></span><span></span></div>
+<div class="message-icon"><i class="bi bi-envelope-open-heart"></i></div>
+<h2 style="text-align:center">{{ t('verify_title') }}</h2>
+<p class="lead" style="text-align:center">{{ t('verify_sub') }}<br><span class="email-chip">{{ p.email }}</span></p>
+
+{% if error %}<div class="alert error"><i class="bi bi-exclamation-circle-fill"></i> {{ error }}</div>{% endif %}
+{% if info %}<div class="alert info"><i class="bi bi-check-circle-fill"></i> {{ info }}</div>{% endif %}
+
+<form method="post" id="code-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="code" id="code-value">
+  <div class="code-boxes" id="code-boxes">
+    {% for i in range(code_len) %}<input maxlength="1" inputmode="text" autocapitalize="characters" autocomplete="{{ 'one-time-code' if i == 0 else 'off' }}" aria-label="Character {{ i + 1 }}">{% endfor %}
+  </div>
+  <p class="note" style="justify-content:center;text-align:center;margin-top:8px">{{ t('verify_hint') }}</p>
+  <button class="btn btn-primary" id="verify-btn" style="margin-top:18px" disabled>{{ t('verify_btn') }} <i class="bi bi-stars"></i></button>
+</form>
+
+<form method="post" action="{{ url_for('customer.resend', slug=brand.slug) }}" class="resend-row">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button id="resend-btn" {{ 'disabled' if wait }} data-wait="{{ wait }}" data-label="{{ t('resend') }}" data-wait-label="{{ t('resend_in') }}">{{ t('resend') }}</button>
+</form>
+<form method="post" action="{{ url_for('customer.restart', slug=brand.slug) }}" style="text-align:center">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn btn-ghost" style="height:40px;font-size:14px">{{ t('change_email') }}</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const boxes = Array.from(document.querySelectorAll("#code-boxes input"));
+  const hidden = document.getElementById("code-value"), btn = document.getElementById("verify-btn");
+  const clean = s => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const sync = () => { hidden.value = boxes.map(b => b.value).join(""); btn.disabled = hidden.value.length !== boxes.length; };
+  function fill(from, text) {
+    const chars = clean(text).split("");
+    for (let i = from; i < boxes.length && chars.length; i++) boxes[i].value = chars.shift();
+    const next = boxes.find(b => !b.value) || boxes[boxes.length - 1]; next.focus(); sync();
+    if (!btn.disabled) document.getElementById("code-form").requestSubmit ? document.getElementById("code-form").requestSubmit() : document.getElementById("code-form").submit();
+  }
+  boxes.forEach((b, i) => {
+    b.addEventListener("input", () => { const v = clean(b.value); if (v.length > 1) { b.value = ""; fill(i, v); return; } b.value = v; if (v && boxes[i + 1]) boxes[i + 1].focus(); sync(); });
+    b.addEventListener("keydown", e => { if (e.key === "Backspace" && !b.value && boxes[i - 1]) { boxes[i - 1].focus(); boxes[i - 1].value = ""; sync(); } });
+    b.addEventListener("paste", e => { e.preventDefault(); fill(i, (e.clipboardData || window.clipboardData).getData("text")); });
+  });
+  boxes[0].focus();
+  document.getElementById("code-form").addEventListener("submit", () => { btn.disabled = true; });
+
+  const rb = document.getElementById("resend-btn"); let wait = parseInt(rb.dataset.wait || "0", 10);
+  const tick = () => {
+    if (wait > 0) { rb.disabled = true; rb.textContent = rb.dataset.waitLabel + " " + wait + "s"; wait--; setTimeout(tick, 1000); }
+    else { rb.disabled = false; rb.textContent = rb.dataset.label; }
+  };
+  tick();
+})();
+</script>
+{% endblock %}

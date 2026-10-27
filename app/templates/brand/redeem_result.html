@@ -1,0 +1,50 @@
+{% extends "layouts/brand.html" %}
+{% block title %}Prize verification{% endblock %}
+{% block crumb %}<a href="{{ url_for('brand.redeem') }}">Scan &amp; redeem</a>{% endblock %}
+{% block actions %}<a class="btn btn-ghost" href="{{ url_for('brand.redeem') }}"><i class="bi bi-qr-code-scan"></i> Scan another</a>{% endblock %}
+{% block content %}
+<div style="max-width:620px;margin:0 auto">
+{% if wrong_brand %}
+  <div class="big-status bad"><i class="bi bi-x-octagon-fill"></i><div>This prize belongs to a different brand and can't be redeemed at {{ brand.name }}.</div></div>
+{% else %}
+  {% set s = award.status %}
+  {% if s == 'redeemed' %}
+    <div class="big-status warn"><i class="bi bi-exclamation-triangle-fill"></i><div>Already redeemed on {{ award.redeemed_at|dt }}{% if award.redeemed_branch %} at {{ award.redeemed_branch.name }}{% endif %}{% if award.redeemed_by %} by {{ award.redeemed_by.full_name }}{% endif %}. Do not hand over the gift again.</div></div>
+  {% elif s == 'expired' %}
+    <div class="big-status bad"><i class="bi bi-hourglass-bottom"></i><div>This prize expired on {{ award.expires_at|dt }} and can no longer be redeemed.</div></div>
+  {% else %}
+    <div class="big-status ok"><i class="bi bi-patch-check-fill"></i><div>Valid prize — confirm the customer's name and hand over the gift.</div></div>
+  {% endif %}
+
+  <div class="prize-ticket" style="margin-top:18px">
+    <div class="top">
+      <div style="color:rgba(255,255,255,.6);font-size:12px;letter-spacing:.1em">PRIZE WON</div>
+      <h2>{{ award.prize_name }}</h2>
+      <div style="opacity:.6" dir="rtl">{{ award.prize_name_ar or '' }}</div>
+    </div>
+    <div class="perf"></div>
+    <div class="bottom">
+      <dl class="kv-list">
+        <dt>Customer</dt><dd>{{ award.participant.full_name }}</dd>
+        <dt>Mobile</dt><dd>{{ award.participant.mobile|mask }}</dd>
+        <dt>Claim code</dt><dd><code style="font-size:22px;letter-spacing:.2em">{{ award.claim_code }}</code></dd>
+        <dt>Won at</dt><dd>{{ award.branch.name if award.branch else '—' }} · {{ award.created_at|dt }}</dd>
+        <dt>Valid until</dt><dd>{{ award.expires_at|dt }}</dd>
+        {% if award.redemption_ref %}<dt>Reference</dt><dd><code style="font-size:18px;letter-spacing:.08em">{{ award.redemption_ref }}</code></dd>{% endif %}
+      </dl>
+      {% if s in ('revealed', 'allocated') %}
+      <form method="post" style="margin-top:22px" data-confirm="Confirm: {{ award.prize_name }} has been handed to {{ award.participant.full_name }}?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if not current_user.is_staff %}
+        <div class="field"><label>Redeemed at branch</label><select class="input" name="branch_id">
+          {% for b in branches %}<option value="{{ b.id }}" {{ 'selected' if b.id == award.branch_id }}>{{ b.name }}</option>{% endfor %}</select></div>
+        {% endif %}
+        <p class="muted small" style="margin:0 0 12px">A redemption reference is generated automatically when you confirm.</p>
+        <button class="btn btn-success btn-lg btn-block"><i class="bi bi-bag-check-fill"></i> Won &amp; delivered</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "layouts/brand.html" %}
+{% block title %}Branches{% endblock %}
+{% block crumb %}{{ brand.name }} · Setup{% endblock %}
+{% block content %}
+<div class="grid g-main" style="align-items:start">
+  <div class="card">
+    <div class="card-head"><div><h3>Branches</h3><p>Each branch gets its own QR code so entries and redemptions are tracked per location</p></div></div>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Branch</th><th>Code</th><th class="right">Entries</th><th class="right">Won</th><th class="right">Delivered</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for r in rows %}{% set b = r.branch %}
+        <tr>
+          <td><div class="strong">{{ b.name }}</div><div class="sub">{{ b.name_ar or '' }}{{ ' · ' ~ b.address if b.address else '' }}</div></td>
+          <td><code>{{ b.code }}</code></td>
+          <td class="right">{{ r.registrations }}</td><td class="right">{{ r.awards }}</td><td class="right strong">{{ r.redemptions }}</td>
+          <td>{% if b.is_active %}<span class="badge b-active">Active</span>{% else %}<span class="badge b-disabled">Off</span>{% endif %}</td>
+          <td class="right nowrap">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('brand.qr_poster', branch_id=b.id) }}" target="_blank"><i class="bi bi-qr-code"></i></a>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="document.getElementById('br-{{ b.id }}').toggleAttribute('hidden')"><i class="bi bi-pencil"></i></button></td>
+        </tr>
+        <tr id="br-{{ b.id }}" hidden><td colspan="7" style="padding:0">
+          <form method="post" action="{{ url_for('brand.branch_edit', branch_id=b.id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid g-4" style="gap:0 14px">
+              <div class="field"><label>Name</label><input class="input input-sm" name="name" value="{{ b.name }}"></div>
+              <div class="field"><label>Arabic name</label><input class="input input-sm" dir="rtl" name="name_ar" value="{{ b.name_ar or '' }}"></div>
+              <div class="field"><label>Code (in QR link)</label><input class="input input-sm" name="code" value="{{ b.code }}"><div class="hint">Changing it invalidates printed QR codes.</div></div>
+              <div class="field"><label>Address</label><input class="input input-sm" name="address" value="{{ b.address or '' }}"></div>
+            </div>
+            <div class="row"><label class="check"><input type="checkbox" name="is_active" value="1" {{ 'checked' if b.is_active }}> Active</label>
+              <button class="btn btn-primary btn-sm">Save</button></div>
+          </form>
+        </td></tr>
+      {% else %}<tr><td colspan="7"><div class="empty">No branches yet.</div></td></tr>{% endfor %}
+      </tbody></table></div>
+  </div>
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card-head"><h3>Add branch</h3></div>
+    <div class="card-body">
+      <div class="field"><label>Branch name</label><input class="input" name="name" required placeholder="Olaya"></div>
+      <div class="field"><label>Arabic name</label><input class="input" dir="rtl" name="name_ar" placeholder="العليا"></div>
+      <div class="field"><label>Code</label><input class="input" name="code" placeholder="olaya"><div class="hint">Short and unique; used in the QR link. Blank = from name.</div></div>
+      <div class="field"><label>Address</label><input class="input" name="address"></div>
+      <button class="btn btn-primary btn-block"><i class="bi bi-plus-lg"></i> Add branch</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

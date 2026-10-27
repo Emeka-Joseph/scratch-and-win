@@ -1,0 +1,67 @@
+{% extends "layouts/brand.html" %}
+{% from "partials/_macros.html" import kpi, activity_list, trend_chart, status_badge %}
+{% block title %}Dashboard{% endblock %}
+{% block crumb %}{{ brand.name }}{% if campaign %} · {{ campaign.name }}{% endif %}{% endblock %}
+{% block actions %}
+  <div class="dropdown">
+    <button class="btn btn-ghost" data-dropdown type="button"><i class="bi bi-download"></i> Export <i class="bi bi-chevron-down small"></i></button>
+    <div class="dropdown-menu">
+      <a href="{{ url_for('brand.export', dataset='participants', fmt='xlsx') }}"><i class="bi bi-file-earmark-excel"></i> Participants (.xlsx)</a>
+      <a href="{{ url_for('brand.export', dataset='participants', fmt='csv') }}"><i class="bi bi-filetype-csv"></i> Participants (.csv)</a>
+      <a href="{{ url_for('brand.export', dataset='redemptions', fmt='xlsx') }}"><i class="bi bi-file-earmark-excel"></i> Redemptions (.xlsx)</a>
+    </div>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('brand.qr_codes') }}"><i class="bi bi-qr-code"></i> QR codes</a>
+  <a class="btn btn-primary" href="{{ url_for('brand.redeem') }}"><i class="bi bi-qr-code-scan"></i> Scan &amp; redeem</a>
+{% endblock %}
+{% block content %}
+{% if not campaign %}
+<div class="card card-pad" style="margin-bottom:18px"><div class="row between"><div><h3>No campaign yet</h3><p class="muted">Set your minimum bill, voucher and terms to go live.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('brand.campaign') }}">Set up campaign</a></div></div>
+{% elif campaign.status != 'live' %}
+<div class="card card-pad" style="margin-bottom:18px;border-color:var(--warning);background:var(--warning-soft)">
+  <div class="row between"><div><strong><i class="bi bi-exclamation-triangle"></i> Campaign is {{ campaign.status }}</strong>
+  <div class="small">Customers scanning your QR codes will see a "not running" message.</div></div>
+  <a class="btn btn-dark btn-sm" href="{{ url_for('brand.campaign') }}">Review campaign</a></div></div>
+{% endif %}
+
+<div class="grid g-4">
+  {{ kpi('Registrations', k.registrations|num, 'bi-person-plus', sub=k.today_registrations|string ~ ' today', dark=True) }}
+  {{ kpi('Email verified', k.verified|num, 'bi-envelope-check', sub=k.verification_rate|string ~ '% of registrations', meter=k.verification_rate) }}
+  {{ kpi('Prizes won', k.awarded|num, 'bi-trophy', sub=k.pending|num ~ ' awaiting pickup') }}
+  {{ kpi('Won & delivered', k.redeemed|num, 'bi-bag-check', sub=k.today_redemptions|string ~ ' today · ' ~ k.redemption_rate ~ '%', meter=k.redemption_rate) }}
+</div>
+
+<div class="grid g-main" style="margin-top:18px">
+  <div class="stack">
+    <div class="card"><div class="card-head"><div><h3>Last 14 days</h3><p>Registrations, wins and deliveries</p></div></div>
+      <div class="card-body">{{ trend_chart('brandTrend', series) }}</div></div>
+    <div class="card">
+      <div class="card-head"><div><h3>Branches</h3><p>Daily totals are in Scan &amp; redeem for each branch</p></div><a class="link small" href="{{ url_for('brand.branches') }}">Manage &rarr;</a></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Branch</th><th class="right">Entries</th><th class="right">Won</th><th class="right">Delivered</th></tr></thead>
+        <tbody>{% for r in branches %}<tr><td class="strong">{{ r.branch.name }}</td><td class="right">{{ r.registrations }}</td><td class="right">{{ r.awards }}</td><td class="right strong">{{ r.redemptions }}</td></tr>
+        {% else %}<tr><td colspan="4"><div class="empty">No branches yet.</div></td></tr>{% endfor %}</tbody></table></div>
+    </div>
+  </div>
+  <div class="stack">
+    {% if campaign %}
+    <div class="card">
+      <div class="card-head"><div><h3>Prize stock</h3><p>{{ campaign.name }}</p></div>{{ status_badge(campaign.status) }}</div>
+      <div class="card-body bar-list">
+        {% for p in prizes %}
+        <div class="item">
+          <div class="row"><span class="strong">{{ p.name }}{% if not p.is_active %} <span class="badge b-muted plain">Off</span>{% endif %}</span>
+            <span class="muted">{% if p.is_fallback %}{{ p.awarded_count }} given · ∞{% else %}{{ p.remaining }} left of {{ p.quantity }}{% endif %}</span></div>
+          {% if not p.is_fallback %}<div class="meter" style="margin:0"><span style="width: {{ (p.awarded_count * 100 / p.quantity)|round if p.quantity else 0 }}%"></span></div>{% endif %}
+        </div>
+        {% else %}<div class="empty">No prizes yet. <a class="link" href="{{ url_for('brand.prizes') }}">Add prizes</a></div>{% endfor %}
+        <div class="row between small muted" style="margin-top:6px"><span>Minimum bill: <b>{{ campaign.currency }} {{ campaign.min_spend|money }}</b></span><a class="link" href="{{ url_for('brand.prizes') }}">Edit prizes</a></div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="card"><div class="card-head"><h3>Recent activity</h3></div>{{ activity_list(activity) }}</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% include "partials/_charts.html" %}{% endblock %}

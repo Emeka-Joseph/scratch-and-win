@@ -1,0 +1,63 @@
+{% extends "layouts/brand.html" %}
+{% block title %}Team{% endblock %}
+{% block crumb %}{{ brand.name }} · Setup{% endblock %}
+{% block content %}
+{% if credentials %}
+<div class="credential" style="margin-bottom:18px">
+  <div class="row between" style="position:relative;z-index:1">
+    <div><div class="strong" style="font-size:17px"><i class="bi bi-key-fill"></i> Sign-in details</div>
+      <div style="color:rgba(255,255,255,.6);font-size:13px">Shown once — copy them now.</div></div>
+    <button class="btn btn-primary btn-sm" data-copy="Sign-in link: {{ login_url }}&#10;Email: {{ credentials.email }}&#10;Password: {{ credentials.password }}"><i class="bi bi-clipboard"></i> Copy all</button>
+  </div>
+  <div class="kv"><span>Sign-in link</span><code>{{ login_url }}</code><span>Email</span><code>{{ credentials.email }}</code><span>Password</span><code>{{ credentials.password }}</code></div>
+</div>
+{% endif %}
+<div class="grid g-main" style="align-items:start">
+  <div class="card">
+    <div class="card-head"><div><h3>Team members</h3><p>Branch staff can only scan &amp; redeem prizes and see their branch's daily totals</p></div></div>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Name</th><th>Role</th><th>Branch</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+      <tr>
+        <td><div class="strong">{{ u.full_name }}</div><div class="sub">{{ u.email }}</div></td>
+        <td><span class="badge {{ 'b-accent' if u.is_brand_admin else 'b-info' }} plain">{{ u.role_label }}</span></td>
+        <td>{% if u.is_staff %}
+          <form method="post" action="{{ url_for('brand.staff_action', user_id=u.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="branch">
+            <select class="input input-sm" name="branch_id" onchange="this.form.submit()">{% for b in brand.branches %}<option value="{{ b.id }}" {{ 'selected' if u.branch_id == b.id }}>{{ b.name }}</option>{% endfor %}</select></form>
+          {% else %}All{% endif %}</td>
+        <td class="sub">{{ u.last_login_at|dt if u.last_login_at else 'Never' }}</td>
+        <td>{% if u.is_active_flag %}<span class="badge b-active">Active</span>{% else %}<span class="badge b-disabled">Disabled</span>{% endif %}</td>
+        <td class="right">
+          <div class="dropdown"><button class="btn btn-ghost btn-icon btn-sm" data-dropdown type="button"><i class="bi bi-three-dots"></i></button>
+            <div class="dropdown-menu">
+              <form method="post" action="{{ url_for('brand.staff_action', user_id=u.id) }}" data-confirm="Reset this password and email the new one?">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="reset"><input type="hidden" name="send_credentials" value="1">
+                <button><i class="bi bi-envelope"></i> Reset &amp; email password</button></form>
+              {% if u.id != current_user.id %}
+              <form method="post" action="{{ url_for('brand.staff_action', user_id=u.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="toggle">
+                <button><i class="bi bi-power"></i> {{ 'Disable' if u.is_active_flag else 'Enable' }}</button></form>
+              {% endif %}
+            </div></div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody></table></div>
+  </div>
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card-head"><h3>Add team member</h3></div>
+    <div class="card-body">
+      <div class="field"><label>Full name</label><input class="input" name="full_name" required></div>
+      <div class="field"><label>Email (login)</label><input class="input" type="email" name="email" required></div>
+      <div class="field"><label>Role</label><select class="input" name="role" onchange="document.getElementById('branch-field').hidden = this.value !== 'staff'">
+        <option value="staff">Branch staff</option><option value="brand_admin">Brand admin</option></select></div>
+      <div class="field" id="branch-field"><label>Branch</label><select class="input" name="branch_id">{% for b in brand.branches %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Password</label><input class="input" name="password" placeholder="Leave empty to auto-generate" autocomplete="new-password"></div>
+      <label class="check field"><input type="checkbox" name="send_credentials" value="1" checked> Email the sign-in link &amp; password</label>
+      <button class="btn btn-primary btn-block"><i class="bi bi-person-plus"></i> Create account</button>
+      <div class="hint muted small" style="margin-top:10px">Sign-in link: <code>{{ login_url }}</code></div>
+    </div>
+  </form>
+</div>
+{% endblock %}

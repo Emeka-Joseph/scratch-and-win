@@ -1,0 +1,8 @@
+{% extends "layouts/customer.html" %}
+{% block title %}{{ t('terms') }}{% endblock %}
+{% block hero_extra %}{% endblock %}
+{% block content %}
+<h2>{{ t('terms') }}</h2>
+<div style="white-space:pre-line;color:#444">{{ campaign.terms(lang) if campaign else '' }}</div>
+<a class="btn btn-primary" href="javascript:history.back()" style="margin-top:20px">{{ t('close') }}</a>
+{% endblock %}

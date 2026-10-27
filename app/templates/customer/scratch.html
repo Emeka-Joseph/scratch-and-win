@@ -1,0 +1,111 @@
+{% extends "layouts/customer.html" %}
+{% block title %}{{ t('scratch_title') }}{% endblock %}
+{% block content %}
+<div class="steps"><span class="on"></span><span class="on"></span><span class="on"></span></div>
+<h2 style="text-align:center" id="scratch-heading">{{ t('scratch_title') }}</h2>
+<p class="lead" style="text-align:center" id="scratch-sub">{{ t('scratch_sub') }}</p>
+
+<div class="scratch-stage" id="stage">
+  <div class="prize-face">
+    <div class="won">{{ t('you_won') }}</div>
+    <h3>{{ award.localized_prize(lang) }}</h3>
+    <img class="qr" src="{{ url_for('customer.award_qr', token=award.qr_token) }}" alt="QR">
+    <div class="code-label" style="margin-top:12px">{{ t('claim_code') }}</div>
+    <div class="code" style="margin-top:2px">{{ award.claim_code }}</div>
+  </div>
+  <canvas id="scratch-canvas"></canvas>
+</div>
+<div class="scratch-hint" id="hint"><span class="hand">👆</span> {{ t('scratch_sub') }}</div>
+
+<div class="reveal-info" id="reveal-info">
+  <h2 style="margin-bottom:4px">🎉 {{ t('congrats') }}</h2>
+  <p class="lead" style="margin-bottom:6px">{{ t('show_staff') }}</p>
+  <p class="note" style="justify-content:center;margin-top:0"><i class="bi bi-calendar-check"></i> {{ t('valid_until') }} <b>{{ award.expires_at|dt('%d %b %Y') }}</b></p>
+  <p class="note" style="justify-content:center;margin-top:4px"><i class="bi bi-envelope-check"></i> {{ t('email_copy') }}</p>
+  <a class="btn btn-primary" id="view-prize" href="{{ url_for('customer.prize', slug=brand.slug, token=award.qr_token) }}" style="margin-top:16px"><i class="bi bi-ticket-perforated"></i> {{ t('claim_code') }}</a>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+(function () {
+  const stage = document.getElementById("stage"), canvas = document.getElementById("scratch-canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const csrf = document.querySelector("meta[name=csrf-token]").content;
+  const label = {{ t('scratch_here')|tojson }};
+  const primary = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
+  let drawing = false, revealed = false, last = null, moves = 0, dpr = Math.max(window.devicePixelRatio || 1, 1);
+
+  function paintCoating() {
+    const r = stage.getBoundingClientRect();
+    canvas.width = r.width * dpr; canvas.height = r.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = r.width, h = r.height;
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, "#C9CCD1"); g.addColorStop(.25, "#EEF0F2"); g.addColorStop(.5, "#B7BBC1"); g.addColorStop(.75, "#E6E8EB"); g.addColorStop(1, "#AEB2B8");
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    // glitter noise
+    for (let i = 0; i < w * h / 55; i++) {
+      ctx.fillStyle = Math.random() > .5 ? "rgba(255,255,255,.5)" : "rgba(0,0,0,.06)";
+      ctx.fillRect(Math.random() * w, Math.random() * h, 1.4, 1.4);
+    }
+    // diagonal sheen stripes
+    ctx.save(); ctx.globalAlpha = .12; ctx.strokeStyle = "#fff"; ctx.lineWidth = 18;
+    for (let x = -h; x < w; x += 46) { ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x + h, 0); ctx.stroke(); }
+    ctx.restore();
+    // central label
+    ctx.fillStyle = primary || "#C8102E";
+    const bw = Math.min(w * .78, 280), bh = 64, bx = (w - bw) / 2, by = (h - bh) / 2;
+    roundRect(bx, by, bw, bh, 32); ctx.fill();
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--on-primary").trim() || "#fff";
+    ctx.font = "800 22px " + getComputedStyle(document.body).fontFamily; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("✦ " + label + " ✦", w / 2, h / 2 + 1);
+    // little coins
+    ctx.font = "26px serif";
+    [["🎁", .2, .2], ["⭐", .8, .18], ["✨", .18, .8], ["🎉", .82, .82]].forEach(([e, px, py]) => ctx.fillText(e, w * px, h * py));
+  }
+  function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+  function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function scratch(p) {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 46;
+    ctx.beginPath(); ctx.moveTo((last || p).x, (last || p).y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x, p.y, 23, 0, Math.PI * 2); ctx.fill();
+    last = p;
+    if (++moves % 12 === 0) { check(); if (navigator.vibrate) navigator.vibrate(4); }
+  }
+  function cleared() {
+    const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data; let clear = 0, total = 0;
+    for (let i = 3; i < d.length; i += 4 * 24) { total++; if (d[i] < 40) clear++; }
+    return clear / total;
+  }
+  function check() { if (!revealed && cleared() > 0.5) reveal(); }
+
+  function reveal() {
+    revealed = true; canvas.classList.add("done");
+    document.getElementById("hint").style.display = "none";
+    document.getElementById("scratch-heading").textContent = {{ t('congrats')|tojson }};
+    document.getElementById("scratch-sub").style.display = "none";
+    document.getElementById("reveal-info").classList.add("show");
+    if (window.confetti) {
+      const colors = [primary, "#FFD23F", "#ffffff"];
+      confetti({ particleCount: 140, spread: 80, origin: { y: .55 }, colors });
+      setTimeout(() => confetti({ particleCount: 90, angle: 60, spread: 60, origin: { x: 0 }, colors }), 250);
+      setTimeout(() => confetti({ particleCount: 90, angle: 120, spread: 60, origin: { x: 1 }, colors }), 400);
+    }
+    if (navigator.vibrate) navigator.vibrate([30, 40, 60]);
+    fetch({{ url_for('customer.reveal', slug=brand.slug)|tojson }}, { method: "POST", headers: { "X-CSRFToken": csrf } }).catch(() => {});
+  }
+
+  canvas.addEventListener("pointerdown", e => { drawing = true; last = null; canvas.setPointerCapture(e.pointerId); scratch(pos(e)); });
+  canvas.addEventListener("pointermove", e => { if (drawing) scratch(pos(e)); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => canvas.addEventListener(ev, () => { drawing = false; last = null; check(); }));
+
+  paintCoating();
+  let rw = stage.clientWidth;
+  window.addEventListener("resize", () => { if (!revealed && Math.abs(stage.clientWidth - rw) > 40) { rw = stage.clientWidth; paintCoating(); } });
+})();
+</script>
+{% endblock %}

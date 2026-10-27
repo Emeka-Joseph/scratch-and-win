@@ -1,0 +1,64 @@
+{% extends "layouts/brand.html" %}
+{% block title %}Prizes{% endblock %}
+{% block crumb %}{{ brand.name }} · {{ c.name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-head"><div><h3>Prize pool</h3><p>Prizes are drawn at random: every remaining unit goes into one shuffled pool ({{ total_remaining|num }} left), so a prize's chance is its remaining stock ÷ the total. The fallback voucher is only given once the pool is empty.</p></div></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Prize</th><th>Pool</th><th class="right">Stock</th><th class="right">Won</th><th class="right">Left</th><th class="right">Chance now</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for p in c.prizes %}
+      {% set in_play = p.is_active and not p.is_fallback and p.remaining %}
+      <tr>
+        <td><div class="strong">{{ p.name }} {% if p.is_fallback %}<span class="badge b-info plain">Fallback voucher</span>{% endif %}</div><div class="sub" dir="auto">{{ p.name_ar or '' }}</div></td>
+        <td>{{ p.branch.name if p.branch else 'All branches' }}</td>
+        <td class="right">{{ '∞' if p.is_fallback else p.quantity|num }}</td>
+        <td class="right">{{ p.awarded_count|num }}</td>
+        <td class="right">{{ '∞' if p.is_fallback else p.remaining|num }}</td>
+        <td class="right strong">{% if in_play and total_remaining %}{{ (p.remaining * 100 / total_remaining)|round(1) }}%{% elif p.is_fallback and p.is_active %}<span class="muted small">When pool is empty</span>{% else %}—{% endif %}</td>
+        <td>{% if not p.is_active %}<span class="badge b-muted">Off</span>{% elif not p.is_fallback and not p.remaining %}<span class="badge b-danger">Out of stock</span>{% else %}<span class="badge b-success">In play</span>{% endif %}</td>
+        <td class="right"><button class="btn btn-ghost btn-sm" type="button" onclick="document.getElementById('edit-{{ p.id }}').toggleAttribute('hidden')"><i class="bi bi-pencil"></i> Edit</button></td>
+      </tr>
+      <tr id="edit-{{ p.id }}" hidden><td colspan="8" style="padding:0">
+        <form method="post" action="{{ url_for('brand.prize_edit', prize_id=p.id) }}" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="grid g-4" style="gap:0 14px">
+            <div class="field"><label>Name (English)</label><input class="input input-sm" name="name" value="{{ p.name }}" {{ 'readonly' if p.is_fallback }}></div>
+            <div class="field"><label>Name (Arabic)</label><input class="input input-sm" dir="rtl" name="name_ar" value="{{ p.name_ar or '' }}" {{ 'readonly' if p.is_fallback }}></div>
+            {% if not p.is_fallback %}
+            <div class="field"><label>Total quantity</label><input class="input input-sm" type="number" min="{{ p.awarded_count }}" name="quantity" value="{{ p.quantity }}"></div>
+            <div class="field"><label>Pool</label><select class="input input-sm" name="branch_id"><option value="">All branches</option>
+              {% for b in brand.branches %}<option value="{{ b.id }}" {{ 'selected' if p.branch_id == b.id }}>{{ b.name }} only</option>{% endfor %}</select></div>
+            {% endif %}
+            <div class="field"><label>Description</label><input class="input input-sm" name="description" value="{{ p.description or '' }}"></div>
+            <div class="field" style="align-self:end"><label class="check"><input type="checkbox" name="is_active" value="1" {{ 'checked' if p.is_active }}> Active</label></div>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary btn-sm" name="action" value="save">Save</button>
+            {% if not p.is_fallback and not p.awarded_count %}<button class="btn btn-danger btn-sm" name="action" value="delete" onclick="return confirm('Delete this prize?')">Delete</button>{% endif %}
+            {% if p.is_fallback %}<span class="muted small">The voucher name follows the percentage in <a class="link" href="{{ url_for('brand.campaign') }}">Campaign</a>.</span>{% endif %}
+          </div>
+        </form>
+      </td></tr>
+    {% else %}
+      <tr><td colspan="8"><div class="empty"><i class="bi bi-trophy"></i>No prizes yet — add your first below.</div></td></tr>
+    {% endfor %}
+    </tbody></table></div>
+</div>
+
+<form class="card" method="post" style="margin-top:18px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="card-head"><div><h3>Add a prize</h3><p>Goods or services customers can win</p></div></div>
+  <div class="card-body">
+    <div class="grid g-4" style="gap:0 14px">
+      <div class="field"><label>Name (English)</label><input class="input" name="name" required placeholder="Free Dessert"></div>
+      <div class="field"><label>Name (Arabic)</label><input class="input" dir="rtl" name="name_ar" placeholder="حلى مجاني"></div>
+      <div class="field"><label>Quantity</label><input class="input" type="number" min="0" name="quantity" value="100"></div>
+      <div class="field"><label>Pool</label><select class="input" name="branch_id"><option value="">All branches (shared)</option>
+        {% for b in brand.branches %}<option value="{{ b.id }}">{{ b.name }} only</option>{% endfor %}</select></div>
+      <div class="field" style="grid-column:span 2"><label>Short description</label><input class="input" name="description" placeholder="Any dessert from the menu"></div>
+      <div class="field" style="align-self:end"><button class="btn btn-primary btn-block"><i class="bi bi-plus-lg"></i> Add prize</button></div>
+    </div>
+  </div>
+</form>
+{% endblock %}

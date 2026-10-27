@@ -1,0 +1,85 @@
+{% macro kpi(label, value, icon, sub=None, dark=False, meter=None) %}
+<div class="card kpi {{ 'dark' if dark }}">
+  <div class="label"><i class="bi {{ icon }}"></i> {{ label }}</div>
+  <div class="value">{{ value }}</div>
+  {% if meter is not none %}<div class="meter"><span style="width: {{ [meter, 100]|min }}%"></span></div>{% endif %}
+  {% if sub %}<div class="sub">{{ sub }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro status_badge(status) %}
+{% set labels = {'redeemed': 'Redeemed', 'revealed': 'Awaiting pickup', 'allocated': 'Not scratched', 'expired': 'Expired',
+                 'pending_verification': 'Unverified', 'verified': 'Verified', 'live': 'Live', 'paused': 'Paused',
+                 'scheduled': 'Scheduled', 'ended': 'Ended'} %}
+<span class="badge b-{{ status }}">{{ labels.get(status, status|title) }}</span>
+{% endmacro %}
+
+{% macro brand_logo(brand, cls='') %}
+<div class="brand-logo {{ cls }}" style="background: {{ brand.primary_color }}">
+  {% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="{{ brand.name }}">{% else %}{{ brand.name[:1] }}{% endif %}
+</div>
+{% endmacro %}
+
+{% macro pagination(page, endpoint, args) %}
+{% if page.pages > 1 or page.total %}
+<div class="pagination">
+  <span>Showing {{ ((page.page - 1) * page.per_page + 1) if page.total else 0 }}–{{ [page.page * page.per_page, page.total]|min }} of {{ page.total|num }}</span>
+  {% if page.pages > 1 %}
+  <div class="pages">
+    {% set a = args.to_dict() if args.to_dict is defined else dict(args) %}
+    {% if page.has_prev %}{% set _ = a.update({'page': page.prev_num}) %}<a href="{{ url_for(endpoint, **a) }}">&lsaquo;</a>{% endif %}
+    {% for n in page.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if n %}{% set _ = a.update({'page': n}) %}
+        {% if n == page.page %}<span class="cur">{{ n }}</span>{% else %}<a href="{{ url_for(endpoint, **a) }}">{{ n }}</a>{% endif %}
+      {% else %}<span>…</span>{% endif %}
+    {% endfor %}
+    {% if page.has_next %}{% set _ = a.update({'page': page.next_num}) %}<a href="{{ url_for(endpoint, **a) }}">&rsaquo;</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro export_menu(endpoint, dataset, args, label='Export') %}
+{% set a = args.to_dict() if args and args.to_dict is defined else {} %}
+{% set _ = a.pop('page', None) %}
+<div class="dropdown">
+  <button class="btn btn-ghost" data-dropdown type="button"><i class="bi bi-download"></i> {{ label }} <i class="bi bi-chevron-down small"></i></button>
+  <div class="dropdown-menu">
+    <a href="{{ url_for(endpoint, dataset=dataset, fmt='xlsx', **a) }}"><i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)</a>
+    <a href="{{ url_for(endpoint, dataset=dataset, fmt='csv', **a) }}"><i class="bi bi-filetype-csv"></i> CSV</a>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro activity_list(items, show_brand=False) %}
+{% set icons = {'prize_redeemed': ('bi-bag-check', 'green'), 'prize_allocated': ('bi-trophy', 'red'), 'customer_registered': ('bi-person-plus', ''),
+                'customer_verified': ('bi-envelope-check', ''), 'brand_created': ('bi-shop', 'red'), 'login': ('bi-box-arrow-in-right', ''),
+                'login_failed': ('bi-exclamation-triangle', 'red'), 'export': ('bi-download', ''), 'prize_revealed': ('bi-stars', 'red'),
+                'registration_blocked_duplicate': ('bi-slash-circle', 'red')} %}
+{% if items %}
+<ul class="activity">
+  {% for log in items %}
+  {% set ic = icons.get(log.action, ('bi-dot', '')) %}
+  <li>
+    <div class="dot {{ ic[1] }}"><i class="bi {{ ic[0] }}"></i></div>
+    <div>
+      <div><strong>{{ log.action.replace('_', ' ')|capitalize }}</strong>
+        {% set d = log.details_dict %}{% if d.prize %} — {{ d.prize }}{% elif d.name %} — {{ d.name }}{% endif %}</div>
+      <time>{{ log.actor_label }}{% if show_brand and log.brand %} · {{ log.brand.name }}{% endif %} · {{ log.created_at|dt }}</time>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty"><i class="bi bi-activity"></i>No activity yet.</div>
+{% endif %}
+{% endmacro %}
+
+{% macro trend_chart(id, series) %}
+<div class="chart-box"><canvas id="{{ id }}"></canvas></div>
+<script>
+window.__charts = window.__charts || [];
+window.__charts.push({ id: {{ id|tojson }}, series: {{ series|tojson }} });
+</script>
+{% endmacro %}

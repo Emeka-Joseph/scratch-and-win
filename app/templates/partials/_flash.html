@@ -1,0 +1,13 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flashes">
+  {% for cat, msg in messages %}
+  <div class="flash {{ cat }}">
+    <i class="bi {{ {'success': 'bi-check-circle-fill', 'error': 'bi-exclamation-octagon-fill'}.get(cat, 'bi-info-circle-fill') }}"></i>
+    <div>{{ msg }}</div>
+    <button type="button" aria-label="Dismiss">&times;</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}

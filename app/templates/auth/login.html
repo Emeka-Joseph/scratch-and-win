@@ -1,0 +1,14 @@
+{% extends "auth/_auth_layout.html" %}
+{% block form %}
+<div class="muted small" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:var(--accent)">{{ 'Brand console' if brand else 'Group console' }}</div>
+<h1 style="margin:6px 0 6px">Welcome back</h1>
+<p class="muted" style="margin:0 0 26px">Sign in with the credentials provided by {{ 'your administrator' if brand else 'the group' }}.</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field"><label>Email</label><input class="input" type="email" name="email" required autofocus autocomplete="username" value="{{ request.form.get('email', '') }}"></div>
+  <div class="field"><label>Password</label><input class="input" type="password" name="password" required autocomplete="current-password"></div>
+  <div class="row between field"><label class="check"><input type="checkbox" name="remember" value="1"> Keep me signed in</label></div>
+  <button class="btn btn-primary btn-lg btn-block">Sign in <i class="bi bi-arrow-right"></i></button>
+</form>
+{% if brand %}<p class="muted small" style="margin-top:22px;text-align:center">Forgot your password? Ask your brand admin to reset it.</p>{% endif %}
+{% endblock %}

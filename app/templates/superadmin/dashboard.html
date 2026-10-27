@@ -1,0 +1,71 @@
+{% extends "layouts/admin.html" %}
+{% from "partials/_macros.html" import kpi, brand_logo, activity_list, trend_chart, export_menu %}
+{% block title %}Group overview{% endblock %}
+{% block crumb %}{{ GROUP_NAME }}{% endblock %}
+{% block actions %}
+  {{ export_menu('superadmin.export', 'brands', request.args, 'Brand summary') }}
+  {{ export_menu('superadmin.export', 'participants', request.args, 'All participants') }}
+  <a class="btn btn-primary" href="{{ url_for('superadmin.brand_new') }}"><i class="bi bi-plus-lg"></i> New sub-brand</a>
+{% endblock %}
+{% block content %}
+<div class="grid g-4">
+  {{ kpi('Registrations', k.registrations|num, 'bi-person-plus', sub=k.today_registrations|string ~ ' today', dark=True) }}
+  {{ kpi('Email verified', k.verified|num, 'bi-envelope-check', sub=k.verification_rate|string ~ '% of registrations', meter=k.verification_rate) }}
+  {{ kpi('Prizes won', k.awarded|num, 'bi-trophy', sub=k.pending|num ~ ' awaiting pickup · ' ~ k.expired|num ~ ' expired') }}
+  {{ kpi('Redeemed', k.redeemed|num, 'bi-bag-check', sub=k.redemption_rate|string ~ '% redemption · ' ~ k.today_redemptions ~ ' today', meter=k.redemption_rate) }}
+</div>
+
+<div class="grid g-main" style="margin-top:18px">
+  <div class="card">
+    <div class="card-head"><div><h3>Last 14 days</h3><p>Activity across all {{ active_brands }} active sub-brands</p></div></div>
+    <div class="card-body">{{ trend_chart('groupTrend', series) }}</div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div><h3>Top prizes</h3><p>Won vs. redeemed</p></div></div>
+    <div class="card-body bar-list">
+      {% set top = (prizes|map(attribute='awarded')|max) if prizes else 1 %}
+      {% for p in prizes %}
+      <div class="item">
+        <div class="row"><span class="strong">{{ p.prize }}</span><span class="muted">{{ p.redeemed }} / {{ p.awarded }}</span></div>
+        <div class="meter" style="margin-top:0"><span style="width: {{ (p.awarded * 100 / top)|round }}%"></span></div>
+      </div>
+      {% else %}
+      <div class="empty"><i class="bi bi-trophy"></i>No prizes won yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="grid g-main" style="margin-top:18px">
+  <div class="card">
+    <div class="card-head"><div><h3>Sub-brand performance</h3><p>{{ brand_count }} sub-brands under the group</p></div>
+      <a class="link small" href="{{ url_for('superadmin.brands') }}">View all &rarr;</a></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Sub-brand</th><th>Campaign</th><th class="right">Registrations</th><th class="right">Won</th><th class="right">Redeemed</th><th>Redemption</th></tr></thead>
+        <tbody>
+        {% for r in leaderboard %}
+          <tr>
+            <td><a class="brand-tile" href="{{ url_for('superadmin.brand_detail', brand_id=r.brand.id) }}">{{ brand_logo(r.brand) }}
+              <div><div class="strong">{{ r.brand.name }}</div><div class="sub">/{{ r.brand.slug }}</div></div></a></td>
+            <td>{% set c = r.brand.current_campaign %}{% if not r.brand.is_active %}<span class="badge b-disabled">Disabled</span>{% elif c %}<span class="badge b-{{ c.status }}">{{ c.status|title }}</span>{% else %}<span class="badge b-muted">No campaign</span>{% endif %}</td>
+            <td class="right">{{ r.registrations|num }}</td>
+            <td class="right">{{ r.awarded|num }}</td>
+            <td class="right strong">{{ r.redeemed|num }}</td>
+            <td style="min-width:120px"><div class="meter" style="margin:0"><span style="width: {{ r.redemption_rate }}%"></span></div><div class="sub">{{ r.redemption_rate }}%</div></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6"><div class="empty"><i class="bi bi-shop"></i>No sub-brands yet. <a class="link" href="{{ url_for('superadmin.brand_new') }}">Create the first one</a>.</div></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div><h3>Live activity</h3><p>Across every sub-brand</p></div>
+      <a class="link small" href="{{ url_for('superadmin.audit_log') }}">Audit log &rarr;</a></div>
+    {{ activity_list(activity, show_brand=True) }}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% include "partials/_charts.html" %}{% endblock %}

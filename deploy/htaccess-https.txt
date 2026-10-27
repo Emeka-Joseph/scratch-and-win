@@ -1,0 +1,8 @@
+# Add these lines at the TOP of the .htaccess file in the domain's document root
+# (cPanel creates that .htaccess with the Passenger lines when you set up the Python app; keep those lines below).
+# Forces https so cookies, the camera QR scanner and the links in QR codes all work.
+
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

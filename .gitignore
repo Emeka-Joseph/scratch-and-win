@@ -1,0 +1,36 @@
+# Secrets: real settings live only on each machine/server
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Virtual environments
+venv/
+.venv/
+env/
+virtualenv/
+
+# Local data, builds and caches
+instance/
+dist/
+*.db
+*.db.bak
+*.bak
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+tmp/
+
+# Uploaded brand logos/prize images (user data)
+app/static/uploads/*/*
+!app/static/uploads/*/.keep
+
+# Internal planning material
+roadmap.jpeg
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

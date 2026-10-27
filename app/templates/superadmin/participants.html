@@ -1,0 +1,12 @@
+{% extends "layouts/admin.html" %}
+{% from "partials/_macros.html" import pagination, export_menu %}
+{% block title %}{{ 'Redemptions' if args.get('status') == 'redeemed' else 'Participants' }}{% endblock %}
+{% block crumb %}All sub-brands{% endblock %}
+{% block actions %}{{ export_menu('superadmin.export', 'participants', args, 'Export filtered') }}{% endblock %}
+{% block content %}
+<div class="card">
+  {% include "partials/_participant_filters.html" %}
+  {% with detail_endpoint='superadmin.participant_detail', show_brand=True %}{% include "partials/_participants_table.html" %}{% endwith %}
+  {{ pagination(page, 'superadmin.participants', args) }}
+</div>
+{% endblock %}

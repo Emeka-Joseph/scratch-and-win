@@ -1,0 +1,9 @@
+{% extends "layouts/customer.html" %}
+{% block hero_extra %}{% endblock %}
+{% block content %}
+<div style="text-align:center;padding:10px 0">
+  <div class="message-icon"><i class="bi {{ 'bi-gift' if kind == 'sold_out' else 'bi-calendar-x' }}"></i></div>
+  <h2>{{ t(kind ~ '_title') }}</h2>
+  <p class="lead" style="margin-bottom:0">{{ t(kind ~ '_sub') }}</p>
+</div>
+{% endblock %}

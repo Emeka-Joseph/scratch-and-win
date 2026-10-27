@@ -1,0 +1,51 @@
+{% set pal = brand_palette(brand) %}
+<!doctype html>
+<html lang="en">
+<head>
+  {% include "layouts/_head.html" %}
+  <title>{{ brand.name }} · {{ branch.name }} QR poster</title>
+  <style>
+    @page { size: A5 portrait; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e9e9e6; font-family: "Plus Jakarta Sans", "Tajawal", sans-serif; display: grid; place-items: center; min-height: 100vh; }
+    .toolbar { position: fixed; top: 16px; right: 16px; display: flex; gap: 8px; }
+    .toolbar button { font: inherit; font-weight: 700; padding: 10px 16px; border-radius: 10px; border: 0; cursor: pointer; background: #111; color: #fff; }
+    .poster { width: 148mm; height: 210mm; background: {{ pal.background }}; color: {{ pal.on_background }}; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 60px rgba(0,0,0,.25); }
+    .top { background: {{ pal.secondary }}; color: {{ pal.on_secondary }}; padding: 12mm 10mm 20mm; text-align: center; position: relative; }
+    .top::after { content: ""; position: absolute; left: -10%; right: -10%; bottom: -14mm; height: 28mm; background: {{ pal.background }}; border-radius: 50% 50% 0 0; }
+    .logo { width: 26mm; height: 26mm; margin: 0 auto 4mm; border-radius: 6mm; background: #fff; display: grid; place-items: center; overflow: hidden; color: #111; font-weight: 800; font-size: 12mm; }
+    .logo img { width: 100%; height: 100%; object-fit: contain; padding: 2.5mm; }
+    .title { font-size: 12mm; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+    .title-ar { font-family: "Tajawal"; font-size: 9mm; font-weight: 800; margin-top: 2mm; }
+    .spend { display: inline-block; margin-top: 5mm; background: {{ pal.primary }}; color: {{ pal.on_primary }}; padding: 2.5mm 6mm; border-radius: 99px; font-weight: 700; font-size: 4mm; }
+    .qr-wrap { position: relative; z-index: 2; margin: -4mm auto 0; background: #fff; padding: 4mm; border-radius: 6mm; box-shadow: 0 6mm 14mm rgba(0,0,0,.12); border: 1.2mm solid {{ pal.primary }}; }
+    .qr-wrap img { width: 62mm; height: 62mm; display: block; }
+    .scan { text-align: center; font-weight: 800; font-size: 5mm; margin-top: 5mm; }
+    .scan small { display: block; font-family: "Tajawal"; font-size: 4.6mm; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; padding: 6mm 9mm 0; text-align: center; font-size: 3mm; }
+    .steps b { display: grid; place-items: center; width: 8mm; height: 8mm; border-radius: 50%; background: {{ pal.primary }}; color: {{ pal.on_primary }}; margin: 0 auto 2mm; font-size: 3.6mm; }
+    .steps .ar { font-family: "Tajawal"; display: block; font-size: 3.2mm; margin-top: 1mm; opacity: .8; }
+    .foot { margin-top: auto; padding: 4mm 8mm; font-size: 2.6mm; text-align: center; opacity: .65; border-top: .3mm solid rgba(0,0,0,.08); }
+    @media print { body { background: none; display: block; } .toolbar { display: none; } .poster { box-shadow: none; } }
+  </style>
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">Print</button></div>
+<div class="poster">
+  <div class="top">
+    <div class="logo">{% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="">{% else %}{{ brand.name[:1] }}{% endif %}</div>
+    <div class="title">Scratch &amp; Win</div>
+    <div class="title-ar">اكشط واربح</div>
+    {% if campaign %}<div class="spend">Bills of {{ campaign.currency }} {{ campaign.min_spend|money }}+ · للفواتير {{ campaign.min_spend|money }} {{ campaign.currency }} فأكثر</div>{% endif %}
+  </div>
+  <div class="qr-wrap"><img src="{{ url_for('brand.qr_png_view', branch_id=branch.id) }}" alt="QR"></div>
+  <div class="scan">Scan with your phone camera<small>امسح الرمز بكاميرا جوالك</small></div>
+  <div class="steps">
+    <div><b>1</b>Register<span class="ar">سجّل</span></div>
+    <div><b>2</b>Verify your email<span class="ar">أكّد بريدك</span></div>
+    <div><b>3</b>Scratch &amp; win<span class="ar">اكشط واربح</span></div>
+  </div>
+  <div class="foot">{{ brand.name }} · {{ branch.name }} — One gift per customer · هدية واحدة لكل عميل<br>{{ GROUP_NAME }}</div>
+</div>
+</body>
+</html>

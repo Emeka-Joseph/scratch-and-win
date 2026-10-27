@@ -1,0 +1,140 @@
+{% extends "layouts/admin.html" %}
+{% from "partials/_macros.html" import kpi, brand_logo, trend_chart, status_badge %}
+{% block title %}{{ brand.name }}{% endblock %}
+{% block crumb %}<a href="{{ url_for('superadmin.brands') }}">Sub-brands</a> / {{ brand.name }}{% endblock %}
+{% block actions %}
+  <div class="dropdown">
+    <button class="btn btn-ghost" data-dropdown type="button"><i class="bi bi-download"></i> Export <i class="bi bi-chevron-down small"></i></button>
+    <div class="dropdown-menu">
+      <a href="{{ url_for('superadmin.export', dataset='participants', fmt='xlsx', brand=brand.id) }}"><i class="bi bi-file-earmark-excel"></i> Participants (.xlsx)</a>
+      <a href="{{ url_for('superadmin.export', dataset='participants', fmt='csv', brand=brand.id) }}"><i class="bi bi-filetype-csv"></i> Participants (.csv)</a>
+      <div class="sep"></div>
+      <a href="{{ url_for('superadmin.export', dataset='redemptions', fmt='xlsx', brand=brand.id) }}"><i class="bi bi-file-earmark-excel"></i> Redemptions (.xlsx)</a>
+      <a href="{{ url_for('superadmin.export', dataset='audit', fmt='xlsx', brand=brand.id) }}"><i class="bi bi-shield-check"></i> Audit log (.xlsx)</a>
+    </div>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('superadmin.brand_edit', brand_id=brand.id) }}"><i class="bi bi-palette"></i> Edit branding</a>
+  <a class="btn btn-primary" href="{{ url_for('superadmin.brand_manage', brand_id=brand.id) }}"><i class="bi bi-box-arrow-up-right"></i> Open brand console</a>
+{% endblock %}
+{% block content %}
+{% if credentials %}
+<div class="credential" style="margin-bottom:18px">
+  <div class="row between" style="position:relative;z-index:1">
+    <div><div class="strong" style="font-size:17px"><i class="bi bi-key-fill" style="color:var(--accent)"></i> Sign-in credentials</div>
+      <div style="color:rgba(255,255,255,.6);font-size:13px">Shown once. Copy them now or reset the password later.</div></div>
+    <button class="btn btn-primary btn-sm" data-copy="Sign-in link: {{ login_url }}&#10;Email: {{ credentials.email }}&#10;Password: {{ credentials.password }}"><i class="bi bi-clipboard"></i> Copy all</button>
+  </div>
+  <div class="kv"><span>Sign-in link</span><code>{{ login_url }}</code><span>Email</span><code>{{ credentials.email }}</code><span>Password</span><code>{{ credentials.password }}</code></div>
+</div>
+{% endif %}
+
+<div class="card card-pad" style="margin-bottom:18px;background:linear-gradient(120deg, {{ brand.secondary_color }}, {{ brand.primary_color }});border:0;color:{{ brand_palette(brand).on_secondary }}">
+  <div class="row between">
+    <div class="brand-tile">{{ brand_logo(brand, 'lg') }}
+      <div><h2 style="font-size:26px">{{ brand.name }} <span style="opacity:.7;font-weight:500">{{ brand.name_ar or '' }}</span></h2>
+        <div style="opacity:.8">{{ brand.tagline or '' }}</div>
+        <div class="row" style="margin-top:8px;gap:8px">
+          <span class="badge plain" style="background:rgba(255,255,255,.18);color:inherit">{{ 'Active' if brand.is_active else 'Disabled' }}</span>
+          {% if brand.current_campaign %}<span class="badge plain" style="background:rgba(255,255,255,.18);color:inherit">{{ brand.current_campaign.name }} · {{ brand.current_campaign.status|title }}</span>{% endif %}
+        </div></div></div>
+    <form method="post" action="{{ url_for('superadmin.brand_toggle', brand_id=brand.id) }}" data-confirm="{{ 'Disable this brand? Its customer pages and staff logins will stop working.' if brand.is_active else 'Re-enable this brand?' }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost btn-sm">{{ 'Disable brand' if brand.is_active else 'Enable brand' }}</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid g-4">
+  {{ kpi('Registrations', k.registrations|num, 'bi-person-plus', sub=k.today_registrations|string ~ ' today', dark=True) }}
+  {{ kpi('Verified', k.verified|num, 'bi-envelope-check', sub=k.verification_rate|string ~ '%', meter=k.verification_rate) }}
+  {{ kpi('Prizes won', k.awarded|num, 'bi-trophy', sub=k.pending|num ~ ' awaiting pickup') }}
+  {{ kpi('Redeemed', k.redeemed|num, 'bi-bag-check', sub=k.redemption_rate|string ~ '% redemption', meter=k.redemption_rate) }}
+</div>
+
+<div class="grid g-main" style="margin-top:18px">
+  <div class="stack">
+    <div class="card"><div class="card-head"><h3>Last 14 days</h3></div><div class="card-body">{{ trend_chart('brandTrend', series) }}</div></div>
+    <div class="card">
+      <div class="card-head"><div><h3>Branches</h3><p>Each branch has its own printed QR code</p></div></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Branch</th><th>Customer link</th><th class="right">Entries</th><th class="right">Won</th><th class="right">Redeemed here</th></tr></thead>
+        <tbody>
+        {% for r in branches %}
+          {% set url = PUBLIC_BASE_URL ~ url_for('customer.landing', slug=brand.slug, branch_code=r.branch.code) %}
+          <tr><td class="strong">{{ r.branch.name }} {% if not r.branch.is_active %}<span class="badge b-disabled">Off</span>{% endif %}</td>
+            <td><div class="copy-box" style="max-width:340px"><span>{{ url }}</span><button class="btn btn-ghost btn-sm" type="button" data-copy="{{ url }}"><i class="bi bi-clipboard"></i></button></div></td>
+            <td class="right">{{ r.registrations }}</td><td class="right">{{ r.awards }}</td><td class="right strong">{{ r.redemptions }}</td></tr>
+        {% else %}<tr><td colspan="5"><div class="empty">No branches.</div></td></tr>{% endfor %}
+        </tbody></table></div>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><div><h3>Brand sign-in link</h3><p>Share with the brand admin and staff</p></div></div>
+      <div class="card-body">
+        <div class="copy-box"><span>{{ login_url }}</span><button class="btn btn-primary btn-sm" type="button" data-copy="{{ login_url }}"><i class="bi bi-clipboard"></i> Copy</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><h3>Brand admins</h3><p>Full access to this brand's console</p></div></div>
+      <ul class="activity">
+        {% for u in brand.admins %}
+        <li style="align-items:center">
+          <div class="avatar" style="background:var(--accent-soft);color:var(--accent)">{{ u.full_name[:1] }}</div>
+          <div style="flex:1;min-width:0"><div class="strong">{{ u.full_name }} {% if not u.is_active_flag %}<span class="badge b-disabled">Disabled</span>{% endif %}</div>
+            <time>{{ u.email }} · last sign-in {{ u.last_login_at|dt if u.last_login_at else 'never' }}</time></div>
+          <div class="dropdown">
+            <button class="btn btn-ghost btn-icon btn-sm" data-dropdown type="button"><i class="bi bi-three-dots"></i></button>
+            <div class="dropdown-menu">
+              <form method="post" action="{{ url_for('superadmin.user_reset', user_id=u.id) }}" data-confirm="Reset this password and email the new one?">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="send_credentials" value="1">
+                <button><i class="bi bi-envelope"></i> Reset &amp; email password</button></form>
+              <form method="post" action="{{ url_for('superadmin.user_toggle', user_id=u.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button><i class="bi bi-power"></i> {{ 'Disable' if u.is_active_flag else 'Enable' }} account</button></form>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <details class="edit-row">
+        <summary class="inline-form" style="padding:12px 22px"><span class="link small"><i class="bi bi-plus-lg"></i> Add another brand admin</span></summary>
+        <form method="post" action="{{ url_for('superadmin.brand_admin_add', brand_id=brand.id) }}" class="inline-form" style="border-top:0;padding-top:0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field"><input class="input" name="full_name" placeholder="Full name" required></div>
+          <div class="field"><input class="input" type="email" name="email" placeholder="Email" required></div>
+          <div class="field"><input class="input" name="password" placeholder="Password (blank = auto-generate)"></div>
+          <label class="check field"><input type="checkbox" name="send_credentials" value="1" checked> Email credentials</label>
+          <button class="btn btn-dark btn-sm">Create admin</button>
+        </form>
+      </details>
+    </div>
+
+    {% set c = brand.current_campaign %}
+    {% if c %}
+    <div class="card">
+      <div class="card-head"><div><h3>Campaign</h3><p>{{ c.name }}</p></div>{{ status_badge(c.status) }}</div>
+      <div class="card-body">
+        <dl class="kv-list" style="grid-template-columns:130px 1fr">
+          <dt>Minimum bill</dt><dd>{{ c.currency }} {{ c.min_spend|money }}</dd>
+          <dt>Fallback voucher</dt><dd>{{ c.voucher_percent }}% {{ '' if c.fallback_enabled else '(off)' }}</dd>
+          <dt>Runs</dt><dd>{{ c.starts_at|dt('%d %b %Y') if c.starts_at else 'Now' }} → {{ c.ends_at|dt('%d %b %Y') if c.ends_at else 'Open-ended' }}</dd>
+          <dt>Prize validity</dt><dd>{{ c.claim_expiry_days }} days</dd>
+        </dl>
+        <div class="section-title" style="margin-top:18px">Prize stock</div>
+        {% for p in c.prizes %}
+        <div class="bar-list"><div class="item">
+          <div class="row"><span class="strong">{{ p.name }}{% if p.is_fallback %} <span class="badge b-info plain">Fallback</span>{% endif %}</span>
+            <span class="muted">{% if p.is_fallback %}{{ p.awarded_count }} given · unlimited{% else %}{{ p.awarded_count }} / {{ p.quantity }}{% endif %}</span></div>
+          {% if not p.is_fallback %}<div class="meter" style="margin:0"><span style="width: {{ (p.awarded_count * 100 / p.quantity)|round if p.quantity else 0 }}%"></span></div>{% endif %}
+        </div></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% include "partials/_charts.html" %}{% endblock %}

@@ -1,0 +1,26 @@
+{# expects: page, detail_endpoint, show_brand #}
+{% from "partials/_macros.html" import status_badge %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr>
+      <th>Customer</th>{% if show_brand %}<th>Brand</th>{% endif %}<th>Branch</th><th>Registered</th><th>Prize</th><th>Claim code</th><th>Status</th><th>Redeemed</th>
+    </tr></thead>
+    <tbody>
+    {% for p in page.items %}
+      {% set a = p.award %}
+      <tr>
+        <td><a href="{{ url_for(detail_endpoint, pid=p.id) }}"><div class="strong">{{ p.full_name }}</div><div class="sub">{{ p.email }} · {{ p.mobile }}</div></a></td>
+        {% if show_brand %}<td>{{ p.brand.name }}</td>{% endif %}
+        <td>{{ p.branch.name if p.branch else '—' }}</td>
+        <td class="nowrap">{{ p.created_at|dt }}<div class="sub">{{ 'العربية' if p.language == 'ar' else 'English' }}{% if p.marketing_consent %} · <i class="bi bi-megaphone" title="Marketing consent"></i>{% endif %}</div></td>
+        <td>{{ a.prize_name if a else '—' }}</td>
+        <td><code>{{ a.claim_code if a else '—' }}</code></td>
+        <td>{{ status_badge(p.status) }}</td>
+        <td class="nowrap">{% if a and a.redeemed_at %}{{ a.redeemed_at|dt }}<div class="sub">{{ a.redeemed_branch.name if a.redeemed_branch else '' }}{% if a.redeemed_by %} · {{ a.redeemed_by.full_name }}{% endif %}</div>{% else %}—{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8"><div class="empty"><i class="bi bi-people"></i>No participants match these filters.</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {% include "layouts/_head.html" %}
+  <title>{% block title %}Sign in{% endblock %} · {{ brand.name if brand else GROUP_NAME }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  {% if brand %}{% set pal = brand_palette(brand) %}
+  <style>:root { --accent: {{ pal.primary }}; --accent-rgb: {{ pal.primary_rgb }}; --accent-dark: {{ pal.primary_dark }}; --on-accent: {{ pal.on_primary }};
+    --side-bg: {{ pal.secondary }}; --accent-bright: {{ pal.primary }}; }
+    .auth-art { color: {{ pal.on_secondary }}; } .auth-art p { color: inherit; opacity: .7; }</style>
+  {% endif %}
+</head>
+<body>
+{% include "partials/_flash.html" %}
+<div class="auth">
+  <div class="auth-art">
+    <div class="row" style="gap:14px">
+      {% if brand %}
+        <div class="brand-logo lg" style="background:#fff;border:0">{% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="">{% else %}<span style="color:#111">{{ brand.name[:1] }}</span>{% endif %}</div>
+        <div><strong style="font-size:20px">{{ brand.name }}</strong><div style="opacity:.6;font-size:13px">{{ GROUP_NAME }}</div></div>
+      {% else %}
+        <div class="logo-mark" style="width:48px;height:48px;border-radius:13px;background:var(--accent);display:grid;place-items:center;font-weight:800;font-size:22px">R</div>
+        <div><strong style="font-size:20px">Razzmattazz</strong><div style="opacity:.6;font-size:13px;letter-spacing:.1em;text-transform:uppercase">Hospitality Group</div></div>
+      {% endif %}
+    </div>
+    <div>
+      {% if brand %}
+      <h2>Your <em>Scratch &amp; Win</em> console.</h2>
+      <p>Issue campaign QR codes, verify prizes and mark them delivered — every action is reported to the group in real time.</p>
+      {% else %}
+      <h2>Every brand. Every gift. <em>One console.</em></h2>
+      <p>Create sub-brands, shape their customer experience and audit every prize won and delivered across the group.</p>
+      {% endif %}
+    </div>
+    <div style="opacity:.5;font-size:12px">© {{ GROUP_NAME }}</div>
+  </div>
+  <div class="auth-form"><div class="box">{% block form %}{% endblock %}</div></div>
+</div>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{# expects: args, branches, brands (optional) #}
+<form class="filters" method="get">
+  <div class="field grow"><label>Search</label><input class="input input-sm" name="q" value="{{ args.get('q', '') }}" placeholder="Name, email, mobile or claim code"></div>
+  {% if brands %}
+  <div class="field"><label>Brand</label><select class="input input-sm" name="brand"><option value="">All brands</option>
+    {% for b in brands %}<option value="{{ b.id }}" {{ 'selected' if args.get('brand') == b.id|string }}>{{ b.name }}</option>{% endfor %}</select></div>
+  {% endif %}
+  <div class="field"><label>Branch</label><select class="input input-sm" name="branch"><option value="">All branches</option>
+    {% for b in branches %}<option value="{{ b.id }}" {{ 'selected' if args.get('branch') == b.id|string }}>{{ b.name }}{% if brands %} ({{ b.brand.name }}){% endif %}</option>{% endfor %}</select></div>
+  <div class="field"><label>Status</label><select class="input input-sm" name="status">
+    {% for val, label in [('', 'Any status'), ('unverified', 'Unverified'), ('pending', 'Won · awaiting pickup'), ('redeemed', 'Redeemed'), ('expired', 'Expired')] %}
+    <option value="{{ val }}" {{ 'selected' if args.get('status', '') == val }}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="field"><label>From</label><input class="input input-sm" type="date" name="date_from" value="{{ args.get('date_from', '') }}"></div>
+  <div class="field"><label>To</label><input class="input input-sm" type="date" name="date_to" value="{{ args.get('date_to', '') }}"></div>
+  <button class="btn btn-dark btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+  {% if args %}<a class="btn btn-ghost btn-sm" href="?">Clear</a>{% endif %}
+</form>

@@ -1,0 +1,9 @@
+{{ t('hello', lang) }} {{ p.full_name }},
+
+{{ t('email_verify_body', lang) }}
+
+    {{ code }}
+
+{{ t('email_verify_expiry', lang, m=ttl) }}
+
+{{ brand.name }} · {{ GROUP_NAME }}

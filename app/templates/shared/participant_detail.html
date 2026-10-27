@@ -1,0 +1,55 @@
+{% extends layout %}
+{% from "partials/_macros.html" import status_badge %}
+{% block title %}{{ p.full_name }}{% endblock %}
+{% block crumb %}Participants / #{{ p.id }}{% endblock %}
+{% block content %}
+{% set a = p.award %}
+<div class="grid g-2">
+  <div class="card">
+    <div class="card-head"><h3>Customer</h3>{{ status_badge(p.status) }}</div>
+    <div class="card-body">
+      <dl class="kv-list">
+        <dt>Name</dt><dd>{{ p.full_name }}</dd>
+        <dt>Email</dt><dd>{{ p.email }}</dd>
+        <dt>Mobile</dt><dd>{{ p.mobile }}</dd>
+        <dt>Language</dt><dd>{{ 'Arabic' if p.language == 'ar' else 'English' }}</dd>
+        <dt>Brand / branch</dt><dd>{{ p.brand.name }} · {{ p.branch.name if p.branch else '—' }}</dd>
+        <dt>Campaign</dt><dd>{{ p.campaign.name }}</dd>
+        <dt>Terms accepted</dt><dd>{{ 'Yes' if p.accepted_terms else 'No' }}</dd>
+        <dt>Marketing consent</dt><dd>{{ 'Yes' if p.marketing_consent else 'No' }}</dd>
+        <dt>Registered</dt><dd>{{ p.created_at|dt }}</dd>
+        <dt>Email verified</dt><dd>{{ p.verified_at|dt if p.verified_at else 'Not yet' }}</dd>
+        <dt>Device</dt><dd class="small muted" style="font-weight:400">{{ p.ip_address }} · {{ p.user_agent }}</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="stack">
+    {% if a %}
+    <div class="prize-ticket">
+      <div class="top"><div class="muted small" style="color:rgba(255,255,255,.6)">PRIZE</div><h2>{{ a.prize_name }}</h2>
+        <div style="opacity:.6">{{ a.prize_name_ar or '' }}</div></div>
+      <div class="perf"></div>
+      <div class="bottom">
+        <dl class="kv-list">
+          <dt>Claim code</dt><dd><code style="font-size:18px;letter-spacing:.15em">{{ a.claim_code }}</code></dd>
+          <dt>Won</dt><dd>{{ a.created_at|dt }}</dd>
+          <dt>Scratched</dt><dd>{{ a.revealed_at|dt if a.revealed_at else 'Not yet' }}</dd>
+          <dt>Expires</dt><dd>{{ a.expires_at|dt }}</dd>
+          <dt>Redeemed</dt><dd>{% if a.redeemed_at %}{{ a.redeemed_at|dt }} at {{ a.redeemed_branch.name if a.redeemed_branch else '—' }} by {{ a.redeemed_by.full_name if a.redeemed_by else '—' }}{% else %}Not yet{% endif %}</dd>
+          {% if a.redemption_ref %}<dt>Reference</dt><dd><code>{{ a.redemption_ref }}</code></dd>{% endif %}
+        </dl>
+      </div>
+    </div>
+    {% endif %}
+    <div class="card">
+      <div class="card-head"><h3>Audit trail</h3></div>
+      <ul class="activity">
+        {% for log in logs %}
+        <li><div class="dot"><i class="bi bi-clock-history"></i></div>
+          <div><strong>{{ log.action.replace('_', ' ')|capitalize }}</strong><time>{{ log.created_at|dt('%d %b %Y, %H:%M:%S') }} · {{ log.actor_label }} · {{ log.ip_address }}</time></div></li>
+        {% else %}<li class="muted">No events recorded.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

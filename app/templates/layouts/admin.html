@@ -1,0 +1,19 @@
+{% extends "layouts/_shell.html" %}
+{% block sidebar %}
+{% set ep = request.endpoint or '' %}
+<a class="logo" href="{{ url_for('superadmin.dashboard') }}">
+  <div class="logo-mark">R</div>
+  <div class="logo-text"><strong>Razzmattazz</strong><span>Hospitality Group</span></div>
+</a>
+<nav class="nav">
+  <div class="nav-label">Overview</div>
+  <a href="{{ url_for('superadmin.dashboard') }}" class="{{ 'active' if ep == 'superadmin.dashboard' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+  <a href="{{ url_for('superadmin.brands') }}" class="{{ 'active' if ep.startswith('superadmin.brand') }}"><i class="bi bi-shop"></i> Sub-brands</a>
+  <div class="nav-label">Promotion</div>
+  <a href="{{ url_for('superadmin.participants') }}" class="{{ 'active' if ep.startswith('superadmin.participant') }}"><i class="bi bi-people"></i> Participants</a>
+  <a href="{{ url_for('superadmin.participants', status='redeemed') }}" class="{{ 'active' if ep == 'superadmin.participants' and request.args.get('status') == 'redeemed' }}"><i class="bi bi-gift"></i> Redemptions</a>
+  <div class="nav-label">Governance</div>
+  <a href="{{ url_for('superadmin.audit_log') }}" class="{{ 'active' if ep == 'superadmin.audit_log' }}"><i class="bi bi-shield-check"></i> Audit log</a>
+  <a href="{{ url_for('superadmin.settings') }}" class="{{ 'active' if ep == 'superadmin.settings' }}"><i class="bi bi-sliders"></i> Settings</a>
+</nav>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "layouts/admin.html" %}
+{% block title %}{{ 'Create sub-brand' if is_new else 'Edit ' ~ brand.name }}{% endblock %}
+{% block crumb %}<a href="{{ url_for('superadmin.brands') }}">Sub-brands</a> / {{ 'New' if is_new else brand.name }}{% endblock %}
+{% macro v(key, default='') %}{{ form.get(key, default if default is not none else '') }}{% endmacro %}
+{% macro color(name, label, default, var) %}
+<div class="field">
+  <label>{{ label }}</label>
+  {% set val = form.get(name) or default %}
+  <div class="color-field" data-var="{{ var }}">
+    <input type="color" value="{{ val }}"><input type="text" name="{{ name }}" value="{{ val }}" maxlength="7">
+  </div>
+</div>
+{% endmacro %}
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="grid g-form">
+    <div class="stack">
+      <!-- Identity -->
+      <div class="card">
+        <div class="card-head"><div><h3>1 · Brand identity</h3><p>Name, link and what the brand offers</p></div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>Brand name (English)</label>
+              <input class="input" id="brand-name" name="name" required value="{{ v('name', brand.name or '') }}" data-preview="#pv-name" placeholder="e.g. Oak Grill"></div>
+            <div class="field"><label>Brand name (Arabic)</label>
+              <input class="input" name="name_ar" dir="rtl" value="{{ v('name_ar', brand.name_ar or '') }}" placeholder="مثال: أوك جريل"></div>
+            <div class="field full"><label>Link name</label>
+              <div class="input-group"><span class="btn btn-ghost" style="border-radius:10px 0 0 10px;border-right:0;font-weight:500">{{ PUBLIC_BASE_URL }}/p/</span>
+              <input class="input" id="brand-slug" name="slug" value="{{ v('slug', brand.slug or '') }}" style="border-radius:0 10px 10px 0" placeholder="oak-grill"></div>
+              <div class="hint">Used in the customer page, QR codes and brand sign-in link: <code>/b/<span class="slug-echo">{{ brand.slug or 'your-brand' }}</span>/login</code></div></div>
+            <div class="field"><label>Tagline (English)</label>
+              <input class="input" name="tagline" value="{{ v('tagline', brand.tagline or '') }}" data-preview="#pv-tagline" placeholder="Fire-kissed flavours since 2012"></div>
+            <div class="field"><label>Tagline (Arabic)</label>
+              <input class="input" name="tagline_ar" dir="rtl" value="{{ v('tagline_ar', brand.tagline_ar or '') }}"></div>
+            <div class="field"><label>Goods &amp; services (English)</label>
+              <textarea class="input" name="description" placeholder="Steakhouse, grills, signature desserts, catering…">{{ v('description', brand.description or '') }}</textarea></div>
+            <div class="field"><label>Goods &amp; services (Arabic)</label>
+              <textarea class="input" name="description_ar" dir="rtl">{{ v('description_ar', brand.description_ar or '') }}</textarea></div>
+            <div class="field"><label>Contact email</label><input class="input" type="email" name="contact_email" value="{{ v('contact_email', brand.contact_email or '') }}"></div>
+            <div class="field"><label>Contact phone</label><input class="input" name="contact_phone" value="{{ v('contact_phone', brand.contact_phone or '') }}"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Look -->
+      <div class="card">
+        <div class="card-head"><div><h3>2 · Look &amp; feel</h3><p>Applied to the brand's dashboard, customer pages, emails and QR posters</p></div></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Logo</label>
+            <label class="dropzone">
+              <div class="thumb logo-preview-target">{% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="">{% else %}<i class="bi bi-image"></i>{% endif %}</div>
+              <div><div class="strong file-name">Click to upload a logo</div><div class="muted small">PNG, SVG, JPG or WEBP · up to 4 MB · transparent PNG/SVG works best</div></div>
+              <input type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.svg">
+            </label>
+            {% if brand.logo_path %}<label class="check" style="margin-top:8px"><input type="checkbox" name="remove_logo"> Remove current logo</label>{% endif %}
+          </div>
+          <div class="grid g-3" style="gap:0 18px">
+            {{ color('primary_color', 'Primary (buttons, highlights)', brand.primary_color or '#C8102E', 'primary') }}
+            {{ color('secondary_color', 'Secondary (header, sidebar)', brand.secondary_color or '#111111', 'secondary') }}
+            {{ color('background_color', 'Page background', brand.background_color or '#FFF8F0', 'bg') }}
+          </div>
+        </div>
+      </div>
+
+      {% if is_new %}
+      <!-- Campaign -->
+      <div class="card">
+        <div class="card-head"><div><h3>3 · Campaign rules</h3><p>The brand admin can fine-tune these later</p></div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>Campaign name (English)</label><input class="input" name="campaign_name" value="{{ v('campaign_name', 'Scratch & Win') }}"></div>
+            <div class="field"><label>Campaign name (Arabic)</label><input class="input" dir="rtl" name="campaign_name_ar" value="{{ v('campaign_name_ar', 'اكشط واربح') }}"></div>
+            <div class="field"><label>Minimum qualifying bill</label>
+              <div class="input-group"><input class="input" type="number" step="0.01" min="0" name="min_spend" value="{{ v('min_spend', '100') }}">
+              <input class="input" name="currency" value="{{ v('currency', 'SAR') }}" style="max-width:90px;border-radius:0 10px 10px 0;border-left:0"></div>
+              <div class="hint">Staff only show the QR when the bill meets this amount.</div></div>
+            <div class="field"><label>Fallback voucher discount (%)</label>
+              <input class="input" type="number" min="1" max="100" name="voucher_percent" value="{{ v('voucher_percent', '10') }}">
+              <div class="hint">Given when other prizes run out.</div></div>
+            <div class="field"><label>Starts</label><input class="input" type="datetime-local" name="starts_at" value="{{ v('starts_at') }}"></div>
+            <div class="field"><label>Ends</label><input class="input" type="datetime-local" name="ends_at" value="{{ v('ends_at') }}"></div>
+            <div class="field"><label>Prize valid for (days)</label><input class="input" type="number" min="1" max="365" name="claim_expiry_days" value="{{ v('claim_expiry_days', '30') }}"></div>
+            <div class="field" style="align-self:end"><label class="check"><input type="checkbox" name="fallback_enabled" value="1" checked> Enable fallback voucher</label></div>
+            <div class="field"><label>Terms &amp; conditions (English)</label><textarea class="input" name="terms_en">{{ v('terms_en', 'One gift per customer. Your email address and mobile number can only be used once. Prizes are non-transferable, cannot be exchanged for cash and must be redeemed before the expiry date.') }}</textarea></div>
+            <div class="field"><label>Terms &amp; conditions (Arabic)</label><textarea class="input" dir="rtl" name="terms_ar">{{ v('terms_ar', 'هدية واحدة لكل عميل. لا يمكن استخدام بريدك الإلكتروني ورقم جوالك إلا مرة واحدة. الجوائز غير قابلة للتحويل أو الاستبدال نقداً ويجب استلامها قبل تاريخ الانتهاء.') }}</textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prizes -->
+      <div class="card">
+        <div class="card-head"><div><h3>4 · Goods &amp; prizes</h3><p>Every unit of stock goes into one shuffled pool and each verified guest draws one at random, so bigger stock means better odds</p></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="add-prize-row"><i class="bi bi-plus-lg"></i> Add prize</button></div>
+        <div class="card-body">
+          <div class="grid" style="grid-template-columns:2fr 2fr 1fr 40px;gap:8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">
+            <span>Prize (English)</span><span>Prize (Arabic)</span><span>Quantity</span><span></span></div>
+          <div id="prize-rows">
+            {% set defaults = [('Free Dessert', 'حلى مجاني', 200), ('Free Drink', 'مشروب مجاني', 150), ('Meal for Two', 'وجبة لشخصين', 10)] %}
+            {% if form.getlist('prize_name') %}
+              {% set defaults = [] %}{% set ar, qty = form.getlist('prize_name_ar'), form.getlist('prize_qty') %}
+              {% for n in form.getlist('prize_name') %}{% set _ = defaults.append((n, ar[loop.index0], qty[loop.index0])) %}{% endfor %}
+            {% endif %}
+            {% for d in defaults %}
+            <div class="prize-row grid" style="grid-template-columns:2fr 2fr 1fr 40px;gap:8px;margin-bottom:8px">
+              <input class="input" name="prize_name" value="{{ d[0] }}"><input class="input" dir="rtl" name="prize_name_ar" value="{{ d[1] }}">
+              <input class="input" type="number" min="0" name="prize_qty" value="{{ d[2] }}">
+              <button class="btn btn-ghost btn-icon remove-row" type="button"><i class="bi bi-x-lg"></i></button>
+            </div>
+            {% endfor %}
+          </div>
+          <template id="prize-row-template">
+            <div class="prize-row grid" style="grid-template-columns:2fr 2fr 1fr 40px;gap:8px;margin-bottom:8px">
+              <input class="input" name="prize_name" placeholder="Prize name"><input class="input" dir="rtl" name="prize_name_ar" placeholder="اسم الجائزة">
+              <input class="input" type="number" min="0" name="prize_qty" value="50">
+              <button class="btn btn-ghost btn-icon remove-row" type="button"><i class="bi bi-x-lg"></i></button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Access -->
+      <div class="card">
+        <div class="card-head"><div><h3>5 · Brand admin access</h3><p>Pre-registered sign-in for the sub-brand's dashboard</p></div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>Admin full name</label><input class="input" name="admin_name" required value="{{ v('admin_name') }}"></div>
+            <div class="field"><label>Admin email (login)</label><input class="input" type="email" name="admin_email" required value="{{ v('admin_email') }}"></div>
+            <div class="field"><label>Password</label><input class="input" type="text" name="admin_password" placeholder="Leave empty to auto-generate" autocomplete="new-password">
+              <div class="hint">They'll be asked to change it on first sign-in.</div></div>
+            <div class="field"><label>First branch</label>
+              <div class="input-group"><input class="input" name="branch_name" value="{{ v('branch_name', 'Main Branch') }}" placeholder="Branch name">
+              <input class="input" name="branch_code" value="{{ v('branch_code', 'main') }}" style="max-width:120px;border-radius:0 10px 10px 0;border-left:0" placeholder="code"></div></div>
+            <div class="field full"><label class="check"><input type="checkbox" name="send_credentials" value="1" checked> Email the sign-in link and credentials to the brand admin</label></div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="row" style="justify-content:flex-end">
+        <a class="btn btn-ghost" href="{{ url_for('superadmin.brands') if is_new else url_for('superadmin.brand_detail', brand_id=brand.id) }}">Cancel</a>
+        <button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-check2-circle"></i> {{ 'Create sub-brand & generate access' if is_new else 'Save changes' }}</button>
+      </div>
+    </div>
+
+    <!-- Live preview -->
+    <div class="sticky-preview">
+      <div class="section-title">Live customer preview</div>
+      <div class="phone">
+        <div class="phone-screen" style="--pv-primary:{{ brand.primary_color or '#C8102E' }};--pv-secondary:{{ brand.secondary_color or '#111111' }};--pv-bg:{{ brand.background_color or '#FFF8F0' }}">
+          <div class="pv-hero">
+            <div class="pv-logo logo-preview-target">{% if brand.logo_path %}<img src="{{ url_for('static', filename=brand.logo_path) }}" alt="">{% else %}<i class="bi bi-image"></i>{% endif %}</div>
+            <h4 id="pv-name">{{ brand.name or 'Your Brand' }}</h4>
+            <p id="pv-tagline">{{ brand.tagline or 'Your tagline here' }}</p>
+            <span class="pv-pill">SCRATCH &amp; WIN</span>
+          </div>
+          <div class="pv-body">
+            <div class="small" style="opacity:.7;margin:6px 0 8px">Full name</div><div class="pv-input"></div>
+            <div class="small" style="opacity:.7;margin-bottom:8px">Mobile number</div><div class="pv-input"></div>
+            <div class="small" style="opacity:.7;margin-bottom:8px">Email address</div><div class="pv-input"></div>
+            <div class="pv-btn">Submit</div>
+          </div>
+        </div>
+      </div>
+      <p class="muted small" style="text-align:center;margin-top:14px">Customers see this after scanning the branch QR.</p>
+    </div>
+  </div>
+</form>
+{% endblock %}
