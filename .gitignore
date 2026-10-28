@@ -26,8 +26,12 @@ tmp/
 app/static/uploads/*/*
 !app/static/uploads/*/.keep
 
-# Internal planning material
-roadmap.jpeg
+# Internal planning material and screenshots (may show customer data)
+/*.png
+/*.PNG
+/*.jpg
+/*.jpeg
+/*.JPG
 
 # Editors / OS
 .idea/

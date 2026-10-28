@@ -179,12 +179,20 @@ def prize_edit(prize_id):
             db.session.commit()
             flash("Prize deleted.", "success")
         return redirect(url_for("brand.prizes"))
+    old_names = (prize.name, prize.name_ar)
     errors = apply_prize_form(prize, request.form, g.brand)
     if errors:
         db.session.rollback()
         for e in errors:
             flash(e, "error")
     else:
+        if not prize.is_fallback and (prize.name, prize.name_ar) != old_names:
+            # A rename is a correction (e.g. a wrong translation): show it on prizes already won too.
+            fixed = Award.query.filter_by(prize_id=prize.id).update(
+                {"prize_name": prize.name, "prize_name_ar": prize.name_ar}, synchronize_session=False)
+            if fixed:
+                audit("prize_renamed", prize, brand_id=g.brand.id, old_name=old_names[0], old_name_ar=old_names[1],
+                      name=prize.name, name_ar=prize.name_ar, awards_updated=fixed)
         audit("prize_updated", prize, brand_id=g.brand.id, name=prize.name, quantity=prize.quantity,
               active=prize.is_active)
         db.session.commit()

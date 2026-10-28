@@ -334,3 +334,30 @@ def test_brand_logo_is_embedded_in_emails(app, tmp_path):
     logo = next(part for part in msg.walk() if part["Content-ID"] == "<brandlogo>")
     with Image.open(__import__("io").BytesIO(logo.get_content())) as img:
         assert img.format == "PNG" and img.size == (160, 160)   # converted from WEBP, padded square
+
+
+def test_renaming_a_prize_corrects_prizes_already_won(app):
+    sa = app.test_client()
+    login(sa, "super@test.com", "SuperPass1")
+    create_brand(app, sa, prize_name=["Mug"], prize_name_ar=["وجبة لشخصين"], prize_qty=["5"])  # wrong Arabic
+    cust = app.test_client()
+    register(cust)
+    cust.post("/p/oak-grill/verify", data={"code": last_code(app)})
+    award = Participant.query.one().award
+    assert award.prize_name_ar == "وجبة لشخصين"
+
+    brand = Brand.query.one()
+    sa.get(f"/admin/brands/{brand.id}/manage")
+    prize = db.session.get(Prize, award.prize_id)
+    sa.post(f"/brand/prizes/{prize.id}", data={"action": "save", "name": "Mug", "name_ar": "كوب",
+                                                "quantity": "5", "is_active": "1"})
+    db.session.expire_all()
+    assert db.session.get(Award, award.id).prize_name_ar == "كوب"
+    assert "كوب".encode() in sa.get(f"/brand/redeem/{award.qr_token}").data
+
+
+def test_new_brand_form_has_no_prefilled_prize_names(app):
+    sa = app.test_client()
+    login(sa, "super@test.com", "SuperPass1")
+    page = sa.get("/admin/brands/new").get_data(as_text=True)
+    assert "وجبة لشخصين" not in page and 'value="Meal for Two"' not in page

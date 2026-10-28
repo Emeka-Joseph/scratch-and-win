@@ -98,14 +98,14 @@
           <div class="grid" style="grid-template-columns:2fr 2fr 1fr 40px;gap:8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">
             <span>Prize (English)</span><span>Prize (Arabic)</span><span>Quantity</span><span></span></div>
           <div id="prize-rows">
-            {% set defaults = [('Free Dessert', 'حلى مجاني', 200), ('Free Drink', 'مشروب مجاني', 150), ('Meal for Two', 'وجبة لشخصين', 10)] %}
+            {% set defaults = [('', '', 100), ('', '', 50), ('', '', 10)] %}
             {% if form.getlist('prize_name') %}
               {% set defaults = [] %}{% set ar, qty = form.getlist('prize_name_ar'), form.getlist('prize_qty') %}
               {% for n in form.getlist('prize_name') %}{% set _ = defaults.append((n, ar[loop.index0], qty[loop.index0])) %}{% endfor %}
             {% endif %}
             {% for d in defaults %}
             <div class="prize-row grid" style="grid-template-columns:2fr 2fr 1fr 40px;gap:8px;margin-bottom:8px">
-              <input class="input" name="prize_name" value="{{ d[0] }}"><input class="input" dir="rtl" name="prize_name_ar" value="{{ d[1] }}">
+              <input class="input" name="prize_name" value="{{ d[0] }}" placeholder="e.g. Free Dessert"><input class="input" dir="rtl" name="prize_name_ar" value="{{ d[1] }}" placeholder="مثال: حلى مجاني">
               <input class="input" type="number" min="0" name="prize_qty" value="{{ d[2] }}">
               <button class="btn btn-ghost btn-icon remove-row" type="button"><i class="bi bi-x-lg"></i></button>
             </div>

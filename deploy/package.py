@@ -26,6 +26,8 @@ def wanted(rel_path):
         return True
     if any(fnmatch.fnmatch(name, pat) for pat in EXCLUDE_FILES):
         return False
+    if os.sep not in rel_path and name.lower().endswith((".png", ".jpg", ".jpeg")):
+        return False   # screenshots in the project root (may show customer data)
     return not rel_path.startswith(UPLOADS + os.sep)
 
 
