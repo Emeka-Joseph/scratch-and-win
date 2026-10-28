@@ -313,3 +313,24 @@ def test_email_sent_in_request_and_failures_reported(app, monkeypatch):
     r = sa.post("/admin/settings/test-email", follow_redirects=True)
     assert b"Incorrect authentication data" in r.data
     _FakeSMTP.fail = None
+
+
+def test_brand_logo_is_embedded_in_emails(app, tmp_path):
+    from PIL import Image
+    sa = app.test_client()
+    login(sa, "super@test.com", "SuperPass1")
+    create_brand(app, sa)
+    (tmp_path / "uploads" / "logos").mkdir(parents=True)
+    Image.new("RGB", (300, 120), "#1F6F43").save(tmp_path / "uploads" / "logos" / "oak.webp")
+    brand = Brand.query.filter_by(slug="oak-grill").one()
+    brand.logo_path = "uploads/logos/oak.webp"
+    db.session.commit()
+    app.static_folder = str(tmp_path)
+
+    register(app.test_client())
+    msg = outbox(app)[-1]
+    html = msg.get_body(("html",)).get_content()
+    assert 'src="cid:brandlogo"' in html
+    logo = next(part for part in msg.walk() if part["Content-ID"] == "<brandlogo>")
+    with Image.open(__import__("io").BytesIO(logo.get_content())) as img:
+        assert img.format == "PNG" and img.size == (160, 160)   # converted from WEBP, padded square

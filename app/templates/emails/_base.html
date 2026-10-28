@@ -7,7 +7,8 @@
   <tr><td align="center">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden">
       <tr><td style="background:{{ pal.secondary }};color:{{ pal.on_secondary }};padding:30px 28px;text-align:center">
-        {% if brand and brand.logo_path %}<img src="{{ PUBLIC_BASE_URL }}{{ url_for('static', filename=brand.logo_path) }}" alt="{{ brand.name }}" width="64" height="64" style="border-radius:16px;background:#fff;padding:6px;display:inline-block">{% endif %}
+        {% if logo_cid %}<img src="cid:{{ logo_cid }}" alt="{{ brand.name }}" width="64" height="64" style="border-radius:16px;background:#fff;padding:6px;display:inline-block;object-fit:contain">
+        {% elif brand and brand.logo_path %}<img src="{{ PUBLIC_BASE_URL }}{{ url_for('static', filename=brand.logo_path) }}" alt="{{ brand.name }}" width="64" height="64" style="border-radius:16px;background:#fff;padding:6px;display:inline-block">{% endif %}
         <div style="font-size:22px;font-weight:800;margin-top:10px">{{ brand.localized('name', lang|default('en')) if brand else GROUP_NAME }}</div>
       </td></tr>
       <tr><td style="padding:30px 28px;text-align:{{ 'right' if rtl else 'left' }};font-size:15px;line-height:1.6" dir="{{ 'rtl' if rtl else 'ltr' }}">
