@@ -54,7 +54,7 @@ def _send_verify_code(p, brand):
     p.verify_sends = (p.verify_sends or 0) + 1
     lang = p.language
     return send_email(p.email, t("email_verify_subject", lang, brand=brand.localized("name", lang), code=code),
-                      "verify_code", from_name=brand.name, brand=brand, p=p, code=code, lang=lang,
+                      "verify_code", from_name=brand.name, reply_to=brand.contact_email, brand=brand, p=p, code=code, lang=lang,
                       ttl=current_app.config["VERIFY_CODE_TTL_MINUTES"])
 
 
@@ -64,7 +64,7 @@ def _send_prize_email(award):
     staff_url = current_app.config["PUBLIC_BASE_URL"] + url_for("brand.redeem_award_view", token=award.qr_token)
     sent = send_email(p.email, t("email_prize_subject", lang, brand=brand.localized("name", lang),
                           prize=award.localized_prize(lang)),
-               "prize", from_name=brand.name, brand=brand, p=p, award=award, lang=lang,
+               "prize", from_name=brand.name, reply_to=brand.contact_email, brand=brand, p=p, award=award, lang=lang,
                expires=fmt_dt(award.expires_at, "%d %b %Y"),
                prize_url=current_app.config["PUBLIC_BASE_URL"] + url_for("customer.prize", slug=brand.slug,
                                                                          token=award.qr_token),

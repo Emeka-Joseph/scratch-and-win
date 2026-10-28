@@ -296,7 +296,9 @@ def test_email_sent_in_request_and_failures_reported(app, monkeypatch):
     _FakeSMTP.sent, _FakeSMTP.fail = [], None
     r = register(app.test_client())
     assert "mail_failed" not in r.headers["Location"]
-    assert len(_FakeSMTP.sent) == 1 and _FakeSMTP.sent[0]["To"] == "sara@example.com"
+    msg = _FakeSMTP.sent[0]
+    assert len(_FakeSMTP.sent) == 1 and msg["To"] == "sara@example.com"
+    assert msg["Date"] and msg["Message-ID"].endswith(">") and msg["Auto-Submitted"] == "auto-generated"
 
     # SMTP rejects the login: the customer is told, and the error lands in the audit log
     _FakeSMTP.fail = smtplib.SMTPAuthenticationError(535, b"Incorrect authentication data")

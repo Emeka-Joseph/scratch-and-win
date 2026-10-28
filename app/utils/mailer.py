@@ -9,7 +9,7 @@ import smtplib
 import ssl
 import threading
 from email.message import EmailMessage
-from email.utils import formataddr, make_msgid
+from email.utils import formataddr, formatdate, make_msgid
 
 from flask import current_app, g, has_request_context, render_template
 
@@ -46,7 +46,7 @@ def _record_failure(to, subject, error):
     audit("email_failed", to=to, subject=subject, error=error, server=f"{cfg['MAIL_SERVER']}:{cfg['MAIL_PORT']}")
 
 
-def send_email(to, subject, template, from_name=None, sync=None, inline_images=None, **context):
+def send_email(to, subject, template, from_name=None, sync=None, inline_images=None, reply_to=None, **context):
     """Render emails/<template>.html (+ optional .txt) and send it.
 
     inline_images: {"cid-name": png_bytes} referenced in HTML as <img src="cid:cid-name">.
@@ -67,7 +67,12 @@ def send_email(to, subject, template, from_name=None, sync=None, inline_images=N
     msg["Subject"] = subject
     msg["From"] = formataddr((from_name or cfg["MAIL_FROM_NAME"], cfg["MAIL_FROM"]))
     msg["To"] = to
-    msg["Message-ID"] = make_msgid()
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    # Date and a Message-ID on the sender's own domain: missing/mismatched ones count against spam scores.
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain=cfg["MAIL_FROM"].rsplit("@", 1)[-1] or None)
+    msg["Auto-Submitted"] = "auto-generated"
     msg.set_content(text or "Please view this email in an HTML-capable client.")
     msg.add_alternative(html, subtype="html")
     if inline_images:
